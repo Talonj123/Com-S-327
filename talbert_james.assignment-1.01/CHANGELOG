@@ -1,0 +1,47 @@
+# Change Log
+## 2106-09-04
+### Changes
+ - Updated the clean rules in makefiles
+ - Switched to pointers in the tile struct for getting neighboring tiles (a proper graph structure)
+### Additions
+ - Save/load code with optional filename parameters
+ - Code to check for/create the data directory under the user's HOME directory
+
+## 2016-09-01
+### Changes
+ - Refactored old library code into folders with separate makefiles (there are horizontal dependancies, but this is to make finding files easier)
+ - switch the default room type to rectangular and chaged the command-line flag accordingly (-rect got replaced by --round)
+
+## 2016-08-30
+### Additions
+ - Rectangular rooms (selected with the -rect switch) can be provided instead of round ones by the get_dungeon() function
+ - Aspect ration constraints for the rectangular rooms (round rooms don't need this)
+
+## 2016-08-30
+### Changes
+ - Fixed bug in array allocation for lists
+ - Tuned the room placement and corridor generation parameters
+ - Fixed the examples generator in the Makefie
+### Additions
+ - Turn cost to imcrease the straightness of corridors
+ - Added a heuristic to Dijkstra's making it A*
+ - Hardness domains, the rock hardness is set for an area and the regions are softened
+
+## 2016-08-29
+### Changes
+ - Fixed priority queue insert function
+### Additions
+ - Corridor generation
+
+## 2016-08-28
+### Additions
+ - Got basic room generation working (rooms actually are affected by rock hardness)
+ - Priority Queue implementation (similar to queue, but with insertion sort on insert)
+### Changes
+ - Improved room placement (I think, produces more equal sized rooms)
+ 
+## 2016-08-26
+### Additions
+ - Some basic dungeon types (tiles, etc)
+ - Some basic dungeon space generation (array creation and random rock hardness)
+ - A 'generic' queue, see queue_README for details
