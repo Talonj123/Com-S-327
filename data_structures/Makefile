@@ -19,7 +19,7 @@ ptr_%.o:
 	make $* TYPE=void* NAME=ptr IS_POINTER=1
 
 clean:
-	rm -f *.o *~ *.a
+	rm -f *.o *~ *.a *.o.i
 
 $(NAME)_list.o: list.c list_internal.h
 	gcc $(gcc_flags) -c -o $@ list.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
@@ -28,7 +28,6 @@ $(NAME)_queue.o: queue.c list_internal.h
 	gcc $(gcc_flags) -c -o $@ queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
 
 $(NAME)_pqueue.o: priority_queue.c priority_queue_internal.h
-	cpp -I.. priority_queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE) >> $(NAME)_pqueue.o.i
 	gcc $(gcc_flags) -c -o $@ priority_queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
 
 $(NAME)_stack.o: stack.c stack_internal.h

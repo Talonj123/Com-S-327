@@ -185,51 +185,11 @@ void soften(dungeon_t* dungeon)
   }
 }
 
-/* Generates a dungeon of the given size, filled with walls
- *   with random hardnesses, but the borders are 100% solid
- */
-dungeon_t* get_blank_dungeon(int rows, int cols)
+void set_tile_pointers(dungeon_t* dungeon)
 {
-  /* freed by client */
-  dungeon_t* dungeon = malloc(sizeof(dungeon_t));
-  tile_queue_t* domains = new_tile_queue();
-  dungeon->rows = rows;
-  dungeon->cols = cols;
-  dungeon->tiles = malloc(sizeof(tile_t*)*rows);
+  int rows = dungeon->rows;
+  int cols = dungeon->cols;
   int r, c;
-  for (r = 0; r < rows; r++)
-  {
-    dungeon->tiles[r] = malloc(sizeof(tile_t)*cols);
-    for (c = 0; c < cols; c++)
-    {
-      tile_t* tile = &dungeon->tiles[r][c];
-      tile->loc.x = c;
-      tile->loc.y = r;
-      tile->type = WALL;
-      /* Check for edge, if an edge tile, set to max hardness (100% hard)
-           otherwise, use a random value (assumes that RAND_MAX >> MAX_HARDNESS)
-      */
-      if (r == 0 || c == 0 || r == (rows-1) || c == (cols-1))
-      {
-	tile->hardness = MAX_HARDNESS;
-      }
-      else
-      {
-	if (rand() % 4)
-	{
-	  /* should have a uniform distribution */
-	  tile->hardness = (MIN_HARDNESS + MAX_HARDNESS)/2;
-	}
-	else
-	{
-	  /* should have a uniform distribution */
-	  tile->hardness = MIN_HARDNESS + (rand() % (MAX_HARDNESS - MIN_HARDNESS));
-          tile_queue_enqueue(domains, tile);
-	}
-      }
-      tile->is_room_center = 0;
-    }
-  }
   for (r = 1; r < rows-1; r++)
   {
     for (c = 1; c < cols-1; c++)
@@ -240,6 +200,7 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
       dungeon->tiles[r][c].down = &dungeon->tiles[r+1][c];
     }
   }
+  
   for (r = 1; r < rows-1; r++)
   {
     dungeon->tiles[r][0].left = NULL;
@@ -247,10 +208,10 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
     dungeon->tiles[r][0].up = &dungeon->tiles[r-1][0];
     dungeon->tiles[r][0].down = &dungeon->tiles[r+1][0];
 
-    dungeon->tiles[r][cols-1].left = &dungeon->tiles[r][rows-2];
+    dungeon->tiles[r][cols-1].left = &dungeon->tiles[r][cols-2];
     dungeon->tiles[r][cols-1].right = NULL;
-    dungeon->tiles[r][cols-1].up = &dungeon->tiles[r-1][rows-1];
-    dungeon->tiles[r][cols-1].down = &dungeon->tiles[r+1][rows-1];
+    dungeon->tiles[r][cols-1].up = &dungeon->tiles[r-1][cols-1];
+    dungeon->tiles[r][cols-1].down = &dungeon->tiles[r+1][cols-1];
   }
   for (c = 1; c < cols-1; c++)
   {
@@ -264,7 +225,7 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
     dungeon->tiles[rows-1][c].up = &dungeon->tiles[rows-2][c];
     dungeon->tiles[rows-1][c].down = NULL;
   }
-
+  
   dungeon->tiles[0][0].right = &dungeon->tiles[0][1];
   dungeon->tiles[0][0].down = &dungeon->tiles[1][0];
   dungeon->tiles[0][0].left = NULL;
@@ -284,6 +245,58 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
   dungeon->tiles[rows-1][0].down = NULL;
   dungeon->tiles[rows-1][0].left = NULL;
   dungeon->tiles[rows-1][0].up = &dungeon->tiles[rows-2][0];
+  
+}
+
+/* Generates a dungeon of the given size, filled with walls
+ *   with random hardnesses, but the borders are 100% solid
+ */
+dungeon_t* get_blank_dungeon(int rows, int cols)
+{
+  /* freed by client */
+  dungeon_t* dungeon = malloc(sizeof(dungeon_t));
+  tile_queue_t* domains = new_tile_queue();
+  dungeon->rows = rows;
+  dungeon->cols = cols;
+  dungeon->tiles = malloc(sizeof(tile_t*)*rows);
+  int r, c;
+  for (r = 0; r < rows; r++)
+  {
+    dungeon->tiles[r] = malloc(sizeof(tile_t)*cols);
+  }
+  set_tile_pointers(dungeon);
+  for (r = 0; r < rows; r++)
+  {
+    for (c = 0; c < cols; c++)
+    {
+      tile_t* tile = &dungeon->tiles[r][c];
+      tile->loc.x = c;
+      tile->loc.y = r;
+      tile->type = WALL;
+      /* Check for edge, if an edge tile, set to max hardness (100% hard)
+           otherwise, use a random value (assumes that RAND_MAX >> MAX_HARDNESS)
+      */
+      if (r == 0 || c == 0 || r == (rows-1) || c == (cols-1))
+      {
+	tile->hardness = MAX_HARDNESS;
+      }
+      else
+      {
+	if (rand() % 7)
+	{
+	  /* should have a uniform distribution */
+	  tile->hardness = (MIN_HARDNESS + MAX_HARDNESS)/2;
+	}
+	else
+	{
+	  /* should have a uniform distribution */
+	  tile->hardness = MIN_HARDNESS + (rand() % (MAX_HARDNESS - MIN_HARDNESS));
+          tile_queue_enqueue(domains, tile);
+	}
+      }
+      tile->is_room_center = 0;
+    }
+  }
 
   diffuse(dungeon, domains);
   tile_queue_clear(domains);

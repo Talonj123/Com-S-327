@@ -45,7 +45,8 @@ typedef struct dungeon_t
 
 } dungeon_t;
 
-dungeon_t* get_blank_dungeon(int rows, int cols);
+//dungeon_t* get_blank_dungeon(int rows, int cols);
 dungeon_t* get_dungeon(int rows, int cols, char rectangular);
+void set_tile_pointers(dungeon_t* dungeon);
 
 #endif //_DUNGEONS_H_

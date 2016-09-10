@@ -279,6 +279,7 @@ dungeon_t* load_dungeon(char* name)
     }
     dungeon->rows = 21;
     dungeon->cols = 80;
+    set_tile_pointers(dungeon);
     /* dungeon allocated */
     for (r = 0; r < 21; r++)
     {
@@ -301,6 +302,7 @@ dungeon_t* load_dungeon(char* name)
     }
     //print_hardnesses(dungeon);
     int i;
+    tile_list_t* rooms = new_tile_list();
     for (i = 14 + 80*21; i < size; i+=4)
     {
       rectangle_t bounds;
@@ -312,6 +314,7 @@ dungeon_t* load_dungeon(char* name)
       center.x = rect_center_x(bounds);
       center.y = rect_center_y(bounds);
       dungeon->tiles[center.y][center.x].is_room_center = 1;
+      tile_list_add(rooms, &dungeon->tiles[center.y][center.x]);
       int r, c;
       for (r = bounds.y; r < bounds.y + bounds.height; r++)
       {
@@ -324,7 +327,9 @@ dungeon_t* load_dungeon(char* name)
 	}	
       }
     }
-    //print_types(dungeon);
+    dungeon->pc.loc = tile_list_get(rooms, rand() % tile_list_size(rooms))->loc;
+    tile_list_clean(rooms);
+    free(rooms);
     fclose(file); 
   }
   free(expanded);
