@@ -1,4 +1,14 @@
 # Change Log
+
+## 2016-09-10
+### Changes
+ - Fixed pathfinding in loaded dungeons
+ - Fixed pathfinding in generated dungeons
+
+## 2016-09-09
+### Additions
+ - Added pathfinding, it dosn't completely work though
+ 
 ## 2106-09-04
 ### Changes
  - Updated the clean rules in makefiles
