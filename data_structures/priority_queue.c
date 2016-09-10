@@ -89,7 +89,7 @@ TYPE CAT2(NAME, _pqueue_dequeue)(QUEUE_T* queue)
     QUEUE_NODE_T* head = queue->head;
     queue->head = head->next;
     value = head->data;
-free(head);
+    free(head);
   }
 
   return value;
@@ -124,8 +124,8 @@ QUEUE_T* CAT2(NAME, _pqueue_decrease_priority_add)(QUEUE_T* queue, TYPE data, ch
     {
       pNode->next = cNode->next;
       found = cNode->data;
-      CAT2(NAME, _pqueue_enqueue)(queue, cNode->data);
       free(cNode);
+      break;
     }
     pNode = cNode;
     cNode = cNode->next;

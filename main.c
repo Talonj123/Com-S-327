@@ -11,6 +11,7 @@
 void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC);
 void print_types(dungeon_t* dungeon, char wall, char hall, char floor);
 void print_distances_non_tunneling(dungeon_t* dungeon, char wall, char hall, char floor);
+void print_distances_tunneling(dungeon_t* dungeon, char wall, char hall, char floor);
 
 int main(int argc, char *argv[])
 {
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
   }
   print_dungeon(dungeon, wall, hall, floor, '@');
   print_distances_non_tunneling(dungeon, wall, hall, floor);
+  print_distances_tunneling(dungeon, wall, hall, floor);
   int r;
   for (r = 0; r < 21; r++)
   {
@@ -233,6 +235,40 @@ void print_distances_non_tunneling(dungeon_t* dungeon, char wall, char hall, cha
       if (tile.distance_to_pc < sizeof(distance_markers)-1)
       {
 	printf("%c", distance_markers[tile.distance_to_pc]);
+      }
+      else
+      {
+        if (tile.type == WALL)
+	{
+	  printf("%c", wall);
+	}
+	else if (tile.type == FLOOR)
+	{
+	  printf("%c", floor);
+	}
+	else if (tile.type == HALL)
+	{
+	  printf("%c", hall);
+	}
+      }
+    }
+    printf("\n");
+  }
+}
+
+
+void print_distances_tunneling(dungeon_t* dungeon, char wall, char hall, char floor)
+{
+  char distance_markers[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  int r, c;
+  for (r = 0; r < 21; r++)
+  {
+    for (c = 0; c < 80; c++)
+    {
+      tile_t tile = dungeon->tiles[r][c];
+      if (tile.tunnelling_distance_to_pc < sizeof(distance_markers)-1)
+      {
+	printf("%c", distance_markers[tile.tunnelling_distance_to_pc]);
       }
       else
       {
