@@ -51,7 +51,7 @@ char check_make_dir()
   free(expanded);
   return to_return;
 }
-
+/*
 void print_types(dungeon_t* dungeon)
 {
   int r, c;
@@ -96,7 +96,7 @@ void print_hardnesses(dungeon_t* dungeon)
     printf("\n");
   }
 }
-
+*/
 rectangle_t get_bounds_rect(dungeon_t* dungeon, tile_t* center)
 {
   rectangle_t bounds = {center->loc.x, center->loc.y, 1, 1};

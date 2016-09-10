@@ -26,12 +26,23 @@ struct tile_t
   char is_room_center;
 
   tile_t *up, *down, *right, *left;
+
+  int distance_to_pc;
+  int tunnelling_distance_to_pc;
 };
+
+typedef struct player_t
+{
+  point_t loc;
+
+} player_t;
 
 typedef struct dungeon_t
 {
   int rows, cols;
   tile_t** tiles;
+  player_t pc;
+
 } dungeon_t;
 
 dungeon_t* get_blank_dungeon(int rows, int cols);

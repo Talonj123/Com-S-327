@@ -23,6 +23,10 @@ typedef struct QUEUE_T QUEUE_T;
 QUEUE_T* CAT3(new_, NAME, _pqueue)(int (*compare)(TYPE a, TYPE b));
 QUEUE_T* CAT2(NAME, _pqueue_enqueue)(QUEUE_T* queue, TYPE data);
 TYPE CAT2(NAME, _pqueue_dequeue)(QUEUE_T* queue);
-					    QUEUE_T* CAT2(NAME, _pqueue_update_priority)(QUEUE_T* queue, TYPE data, char (*equals)(TYPE a, TYPE b));
+#ifndef IS_POINTER
+QUEUE_T* CAT2(NAME, _pqueue_decrease_priority_add)(QUEUE_T* queue, TYPE data, char (*equals)(TYPE a, TYPE b));
+#else
+QUEUE_T* CAT2(NAME, _pqueue_decrease_priority_add_ptr)(QUEUE_T* queue, TYPE data);
+#endif
 char CAT2(NAME, _pqueue_is_empty)(QUEUE_T* queue);
 void CAT2(NAME, _pqueue_clear)(QUEUE_T* queue);

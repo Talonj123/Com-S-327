@@ -2,6 +2,8 @@
 #include <math.h>
 #include <limits.h>
 
+#include <stdio.h>
+
 #include "dungeons_private.h"
 #include "coordinates.h"
 
@@ -25,6 +27,33 @@
 #define DIJKSTRA_BASE_MOVE_COST (0)
 #define DIJKSTRA_FLOOR_COST 30
 #define DIJKSTRA_HALL_COST 5
+
+/*
+void print_null_tiles(dungeon_t* dungeon)
+{
+  int r, c;
+  for (r = 0; r < 21; r++)
+  {
+    for (c = 0; c < 80; c++)
+    {
+      tile_t tile = dungeon->tiles[r][c];
+      if (tile.right == NULL ||
+	  tile.left == NULL ||
+	  tile.up == NULL ||
+	  tile.down == NULL)
+      {
+	printf("N");
+      }
+      else
+      {
+	printf(" ");
+      }
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+*/
 
 char check_join_domain(dungeon_t* dungeon, tile_queue_t* domains, point_t to_check, hardness_t to_join)
 { 
@@ -218,16 +247,16 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
     dungeon->tiles[r][0].up = &dungeon->tiles[r-1][0];
     dungeon->tiles[r][0].down = &dungeon->tiles[r+1][0];
 
-    dungeon->tiles[r][rows-1].left = &dungeon->tiles[r][rows-2];
-    dungeon->tiles[r][rows-1].right = NULL;
-    dungeon->tiles[r][rows-1].up = &dungeon->tiles[r-1][rows-1];
-    dungeon->tiles[r][rows-1].down = &dungeon->tiles[r+1][rows-1];
+    dungeon->tiles[r][cols-1].left = &dungeon->tiles[r][rows-2];
+    dungeon->tiles[r][cols-1].right = NULL;
+    dungeon->tiles[r][cols-1].up = &dungeon->tiles[r-1][rows-1];
+    dungeon->tiles[r][cols-1].down = &dungeon->tiles[r+1][rows-1];
   }
   for (c = 1; c < cols-1; c++)
   {
     dungeon->tiles[0][c].left = &dungeon->tiles[0][c-1];
     dungeon->tiles[0][c].right = &dungeon->tiles[0][c+1];
-    dungeon->tiles[0][c].up = &dungeon->tiles[rows-2][c];
+    dungeon->tiles[0][c].up = NULL;
     dungeon->tiles[0][c].down = &dungeon->tiles[1][c];
 
     dungeon->tiles[rows-1][c].left = &dungeon->tiles[rows-1][c-1];
@@ -255,7 +284,7 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
   dungeon->tiles[rows-1][0].down = NULL;
   dungeon->tiles[rows-1][0].left = NULL;
   dungeon->tiles[rows-1][0].up = &dungeon->tiles[rows-2][0];
-  
+
   diffuse(dungeon, domains);
   tile_queue_clear(domains);
   free(domains);
@@ -672,7 +701,9 @@ dungeon_t* get_dungeon(int rows, int cols, char rectangular)
       }
     }	
     tile_list_t* rooms = find_rooms(dungeon);
-    if (tile_list_size(rooms) >= 6)
+    int num_rooms = tile_list_size(rooms);
+    dungeon->pc.loc = tile_list_get(rooms, rand()%num_rooms)->loc;
+    if (num_rooms >= 6)
     {
       tile_list_clean(rooms);
       free(rooms);

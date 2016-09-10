@@ -7,11 +7,14 @@ folder_name = $(name).assignment-$(assignment_num)
 gcc_flags = -ggdb -Wall -Werror -lm 
 
 #Top-level targets
-dungeons: dungeons.a main.c save.a
+dungeons: dungeons.a main.c save.a pathfinding.o
 	gcc $(gcc_flags) -c -o main.o main.c 
-	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a 
+	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o
 
 all: dungeons
+
+pathfinding.o: pathfinding.c
+	gcc $(gcc_flags) -c -o $@ pathfinding.c
 
 save.o: save.c
 	gcc $(gcc_flags) -c -o $@ save.c
@@ -48,44 +51,44 @@ clean: clean_general
 	rm -f *.map
 	rm -f *_test
 	rm -f examples
-	cd dungeon; make -s clean
-	cd data_structures; make -s clean
+	cd dungeon; make clean
+	cd data_structures; make clean
 
 #dependancies
 dungeons.a: dungeon/*.c dungeon/*.c path_pqueue.o tile_list.o tile_queue.o tile_pqueue.o
-	cd dungeon; make -s dungeons.a;
+	cd dungeon; make  dungeons.a;
 	ld -r -o $@ dungeon/dungeons.a path_pqueue.o tile_list.o tile_queue.o tile_pqueue.o
 
 %_list.o: data_structures/list.c
-	cd data_structures; make -s list TYPE=$*; cp $*_list.o ../$*_list.o
+	cd data_structures; make  list TYPE=$*; cp $*_list.o ../$*_list.o
 	cp data_structures/$*_list.o $*_list.o
 
 %_queue.o: data_structures/queue.c¥
-	cd data_structures; make -s queue TYPE=$*; cp $*_queue.o ../$*_queue.o
+	cd data_structures; make  queue TYPE=$*; cp $*_queue.o ../$*_queue.o
 	cp data_structures/$*_queue.o $*_queue.o
 
 %_pqueue.o: data_structures/priority_queue.c
-	cd data_structures; make -s pqueue TYPE=$*; cp $*_pqueue.o ../$*_pqueue.o
+	cd data_structures; make  pqueue TYPE=$*; cp $*_pqueue.o ../$*_pqueue.o
 	cp data_structures/$*_pqueue.o $*_pqueue.o
 
 tile_queue.o:
-	cd data_structures; make -s queue TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h;
+	cd data_structures; make  queue TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h IS_POINTER=1;
 	cp data_structures/tile_queue.o tile_queue.o
 
 tile_pqueue.o:
-	cd data_structures; make -s pqueue TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h;
+	cd data_structures; make  pqueue TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h IS_POINTER=1;
 	cp data_structures/tile_pqueue.o tile_pqueue.o
 
 tile_list.o:
-	cd data_structures; make -s list TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h;
+	cd data_structures; make  list TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h IS_POINTER=1;
 	cp data_structures/tile_list.o tile_list.o
 
 room_list.o:
-	cd data_structures; make -s list TYPE=rectangle_t NAME=room HEADER=dungeon/coordinates.h;
+	cd data_structures; make  list TYPE=rectangle_t NAME=room HEADER=dungeon/coordinates.h;
 	cp data_structures/room_list.o room_list.o
 
 path_pqueue.o: dungeon/dungeons_private.h data_structures/priority_queue.c
-	cd data_structures; make -s pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h; cp path_pqueue.o ../path_pqueue.o
+	cd data_structures; make  pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h IS_POINTER=1; cp path_pqueue.o ../path_pqueue.o
 
 
 #Common targets
@@ -106,7 +109,7 @@ clean_general:
 
 submission: $(main_target) clean Makefile CHANGELOG README
 	cp -R . ../$(folder_name)
-	tar cvfz $(folder_name).tar.gz ../$(folder_name)
+	tar cvfz $(folder_name).tar.gz ../$(folder_name) --exclude='.git' --exclude='.gitignore' --exclude='.directory'
 	rm -r -f ../$(folder_name)
 
 test: submission

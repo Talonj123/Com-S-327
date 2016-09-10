@@ -2,8 +2,15 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <limits.h>
+
 #include "dungeon/dungeons.h"
 #include "save.h"
+#include "pathfinding.h"
+
+void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC);
+void print_types(dungeon_t* dungeon, char wall, char hall, char floor);
+void print_distances_non_tunneling(dungeon_t* dungeon, char wall, char hall, char floor);
 
 int main(int argc, char *argv[])
 {
@@ -42,7 +49,7 @@ int main(int argc, char *argv[])
 	{
 	  /* not a switch, and basic checks passed, assume name */
 	  if (strlen(name) > 4 &&
-	      !strcmp(name + strlen(name) - 4, ".rlg"))
+	      !strcmp(name + strlen(name) - 4, ".rlg327"))
 	  {
 	    load_name = name;
 	  }
@@ -51,7 +58,7 @@ int main(int argc, char *argv[])
 	    free_load_name = 1;
 	    load_name = malloc(strlen(name) + 5);
 	    strcpy(load_name, name);
-	    strcpy(load_name + strlen(name), ".rlg");
+	    strcpy(load_name + strlen(name), ".rlg327");
 	  }
 	  args_processed++;
 	}
@@ -70,7 +77,7 @@ int main(int argc, char *argv[])
 	{
 	  /* not a switch, and basic checks passed, assume name */
 	  if (strlen(name) > 4 &&
-	      !strcmp(name + strlen(name) - 4, ".rlg"))
+	      !strcmp(name + strlen(name) - 4, ".rlg327"))
 	  {
 	    save_name = name;
 	  }
@@ -79,7 +86,7 @@ int main(int argc, char *argv[])
 	    free_save_name = 1;
 	    save_name = malloc(strlen(name) + 5);
 	    strcpy(save_name, name);
-	    strcpy(save_name + strlen(name), ".rlg");
+	    strcpy(save_name + strlen(name), ".rlg327");
 	  }
 	  args_processed++;
 	}
@@ -129,7 +136,7 @@ int main(int argc, char *argv[])
       free(save_name);
     }
   }
-
+  get_distances(dungeon);
   char wall = ' ';
   char hall = '#';
   char floor = '.';
@@ -140,6 +147,50 @@ int main(int argc, char *argv[])
     hall = ' ';
     floor = ' ';
   }
+  print_dungeon(dungeon, wall, hall, floor, '@');
+  print_distances_non_tunneling(dungeon, wall, hall, floor);
+  int r;
+  for (r = 0; r < 21; r++)
+  {
+    free(dungeon->tiles[r]);
+  }
+  free(dungeon->tiles);
+  free(dungeon);
+  return 0;
+}
+
+void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC)
+{
+  int r, c;
+  for (r = 0; r < 21; r++)
+  {
+    for (c = 0; c < 80; c++)
+    {
+      tile_t tile = dungeon->tiles[r][c];
+      if (dungeon->pc.loc.x == tile.loc.x &&
+	  dungeon->pc.loc.y == tile.loc.y)
+      {
+	printf("%c", PC);
+      }	
+      else if (tile.type == WALL)
+      {
+	printf("%c", wall);
+      }
+      else if (tile.type == FLOOR)
+      {
+        printf("%c", floor);
+      }
+      else if (tile.type == HALL)
+      {
+        printf("%c", hall);
+      }
+    }
+    printf("\n");
+  }
+}
+
+void print_types(dungeon_t* dungeon, char wall, char hall, char floor)
+{
   int r, c;
   for (r = 0; r < 21; r++)
   {
@@ -168,11 +219,37 @@ int main(int argc, char *argv[])
     }
     printf("\n");
   }
+}
+
+void print_distances_non_tunneling(dungeon_t* dungeon, char wall, char hall, char floor)
+{
+  char distance_markers[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  int r, c;
   for (r = 0; r < 21; r++)
   {
-    free(dungeon->tiles[r]);
+    for (c = 0; c < 80; c++)
+    {
+      tile_t tile = dungeon->tiles[r][c];
+      if (tile.distance_to_pc < sizeof(distance_markers)-1)
+      {
+	printf("%c", distance_markers[tile.distance_to_pc]);
+      }
+      else
+      {
+        if (tile.type == WALL)
+	{
+	  printf("%c", wall);
+	}
+	else if (tile.type == FLOOR)
+	{
+	  printf("%c", floor);
+	}
+	else if (tile.type == HALL)
+	{
+	  printf("%c", hall);
+	}
+      }
+    }
+    printf("\n");
   }
-  free(dungeon->tiles);
-  free(dungeon);
-  return 0;
 }

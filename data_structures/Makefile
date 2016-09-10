@@ -7,25 +7,32 @@ else
   INCLUDE=
 endif
 
+ifdef IS_POINTER
+  POINTER=-DIS_POINTER=1
+else
+  POINTER=
+endif
+
 all: ptr_stack.o ptr_queue.o ptr_pqueue.o ptr_list.o
 
-ptr_%.o: %.c
-	make $* TYPE=void* NAME=ptr
+ptr_%.o:
+	make $* TYPE=void* NAME=ptr IS_POINTER=1
 
 clean:
 	rm -f *.o *~ *.a
 
 $(NAME)_list.o: list.c list_internal.h
-	gcc $(gcc_flags) -c -o $@ list.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(INCLUDE)
+	gcc $(gcc_flags) -c -o $@ list.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
 
 $(NAME)_queue.o: queue.c list_internal.h
-	gcc $(gcc_flags) -c -o $@ queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(INCLUDE)
+	gcc $(gcc_flags) -c -o $@ queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
 
 $(NAME)_pqueue.o: priority_queue.c priority_queue_internal.h
-	gcc $(gcc_flags) -c -o $@ priority_queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(INCLUDE)
+	cpp -I.. priority_queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE) >> $(NAME)_pqueue.o.i
+	gcc $(gcc_flags) -c -o $@ priority_queue.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
 
 $(NAME)_stack.o: stack.c stack_internal.h
-	gcc $(gcc_flags) -c -o $@ stack.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(INCLUDE)
+	gcc $(gcc_flags) -c -o $@ stack.c -DNAME=$(NAME) -DTYPE=$(TYPE) $(POINTER) $(INCLUDE)
 
 list: $(NAME)_list.o
 	@echo $(TYPE) list built as $(NAME)_list.o

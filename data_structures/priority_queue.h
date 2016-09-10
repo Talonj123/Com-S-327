@@ -7,3 +7,4 @@
 #undef QUEUE_NODE_T
 #undef TYPE
 #undef NAME
+#undef IS_POINTER

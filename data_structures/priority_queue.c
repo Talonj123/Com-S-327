@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "priority_queue_internal.h"
 
+#include <stdio.h>
+
 typedef struct QUEUE_NODE_T QUEUE_NODE_T;
 
 struct QUEUE_NODE_T
@@ -92,27 +94,44 @@ free(head);
 
   return value;
 }
-
-QUEUE_T* CAT2(NAME, _pqueue_update_priority)(QUEUE_T* queue, TYPE data, char (*equals)(TYPE a, TYPE b))
+#if IS_POINTER
+char CAT2(NAME, _pqueue_pointer_item_equals)(TYPE a, TYPE b)
 {
+  return a == b;
+}
+
+QUEUE_T* CAT2(NAME, _pqueue_decrease_priority_add_ptr)(QUEUE_T* queue, TYPE data)
+{
+  char (*equals)(TYPE a, TYPE b) = CAT2(NAME, _pqueue_pointer_item_equals);
+#else
+QUEUE_T* CAT2(NAME, _pqueue_decrease_priority_add)(QUEUE_T* queue, TYPE data, char (*equals)(TYPE a, TYPE b))
+{
+#endif
+  TYPE found = data;
   if ((queue->head != NULL) && equals(queue->head->data, data))
   {
     QUEUE_NODE_T* node = queue->head;
     queue->head = node->next;
-    CAT2(NAME, _pqueue_enqueue)(queue, node->data);
-free(node);
+    found = node->data;
+    free(node);
   }
   QUEUE_NODE_T* pNode = queue->head;
   QUEUE_NODE_T* cNode = queue->head;
+  int rounds = 0;
   while (cNode != NULL)
   {
     if (equals(cNode->data, data))
     {
       pNode->next = cNode->next;
+      found = cNode->data;
       CAT2(NAME, _pqueue_enqueue)(queue, cNode->data);
-free(cNode);
+      free(cNode);
     }
+    pNode = cNode;
+    cNode = cNode->next;
+    rounds++;
   }
+  CAT2(NAME, _pqueue_enqueue)(queue, found);
   return queue;
 }
 
