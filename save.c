@@ -46,57 +46,12 @@ char check_make_dir()
   struct stat st;
   if (stat(expanded, &st) != 0)
   {
-    to_return = mkdir(expanded, S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO) != 0;
+    to_return = mkdir(expanded, 0x600) != 0;
   }
   free(expanded);
   return to_return;
 }
-/*
-void print_types(dungeon_t* dungeon)
-{
-  int r, c;
-  for (r = 0; r < 21; r++)
-  {
-    for (c = 0; c < 80; c++)
-    {
-      if (dungeon->tiles[r][c].is_room_center)
-      {
-	printf("C");
-      }
-      else if (dungeon->tiles[r][c].type == FLOOR)
-      {
-	printf("F");
-      }
-      else if (dungeon->tiles[r][c].type == HALL)
-      {
-	printf("H");
-      }
-      else if (dungeon->tiles[r][c].type == WALL)
-      {
-	printf("W");
-      }
-      else
-      {
-	printf(" ");
-      }
-    }
-    printf("\n");
-  }
-}
 
-void print_hardnesses(dungeon_t* dungeon)
-{
-  int r, c;
-  for (r = 0; r < 21; r++)
-  {
-    for (c = 0; c < 80; c++)
-    {
-      printf("%d", dungeon->tiles[r][c].hardness/26);
-    }
-    printf("\n");
-  }
-}
-*/
 rectangle_t get_bounds_rect(dungeon_t* dungeon, tile_t* center)
 {
   rectangle_t bounds = {center->loc.x, center->loc.y, 1, 1};
@@ -182,26 +137,12 @@ char save_dungeon(dungeon_t* dungeon, char* name)
     /* save the file */
     fprintf(file, "RLG327");
     uint32_t version = 0;
-    uint32_t aversion[4], asize[4];
-    aversion[0] = (char)(version >> 24);
-    aversion[1] = (char)(version >> 16);
-    aversion[2] = (char)(version >> 8);
-    aversion[3] = (char)(version >> 0);
+    
+    version = htobe32(version);
+    fwrite(&version, 4, 1, file);
 
-    asize[0] = (char)(size >> 24);
-    asize[1] = (char)(size >> 16);
-    asize[2] = (char)(size >> 8);
-    asize[3] = (char)(size >> 0);
-
-    fputc(aversion[0], file);
-    fputc(aversion[1], file);
-    fputc(aversion[2], file);
-    fputc(aversion[3], file);
-
-    fputc(asize[0], file);
-    fputc(asize[1], file);
-    fputc(asize[2], file);
-    fputc(asize[3], file);
+    size = htobe32(size);
+    fwrite(&size, 4, 1, file);
 
     int r, c;
     for (r = 0; r < dungeon->rows; r++)
@@ -255,21 +196,15 @@ dungeon_t* load_dungeon(char* name)
     char descriptor[7];
     descriptor[6] = 0;
     uint32_t version, size;
-    char aversion[4], asize[4];
 
     fread(descriptor, 1, 6, file);
-    fread(aversion, 1, 4, file); 
-    fread(asize, 1, 4, file);
-    version = (uint32_t)aversion[0] << 24;
-    version = version | (uint32_t)aversion[1] << 16;
-    version = version | (uint32_t)aversion[2] << 8;
-    version = version | (uint32_t)aversion[3] << 0;
-
-    size = (uint32_t)(uint8_t)asize[0] << 24;
-    size = size | (uint32_t)(uint8_t)asize[1] << 16;
-    size = size | (uint32_t)(uint8_t)asize[2] << 8;
-    size = size | (uint32_t)(uint8_t)asize[3] << 0;
-
+    fread(&version, 4, 1, file);
+    fread(&size, 4, 1, file);
+     
+    version = be32toh(version);
+    size = be32toh(size);
+    
+    printf("Version: %d\n", version);
     dungeon = malloc(sizeof(dungeon_t*));
     dungeon->tiles = malloc(sizeof(tile_t*)*21);
     int r;

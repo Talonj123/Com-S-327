@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
   char load = 0;
   char save = 0;
   int args_processed = 0;
-  char* load_name = "dungeon.rlg";
+  char* load_name = "dungeon.rlg327";
   char free_load_name = 0;
-  char* save_name = "dungeon.rlg";
+  char* save_name = "dungeon.rlg327";
   char free_save_name = 0;
   while (argc > args_processed)
   {
