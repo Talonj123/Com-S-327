@@ -1,9 +1,6 @@
-The application generates a dungeon space (dungeons.h::dungeon_t, dungeons.c::get_blank_dungeon()) and fills it with rooms (dungeons.c::get_dungeon()), each room is bounded by a rectangle, but does not fill it. Each tile in the dungeon has a hardness, represening the difficculty invlived in removing it. The rooms are generated (dungeon.c::place_rand_room(), dungeon.c::place_rect_room()) be removing exposed tiles in order of 'elligibility'. The room's placement will not occur if the space isn't clear, and no tiles on the edge of the room's border are 'mined', so the rooms will never touch.
+By default, the dungeon is generated as per assignment 1.01.
+If the program is run with the --load flag, then the dungeon is loaded from %HOME%/.rlg327/dungeon.rlg327
+If the program is run with the --save flag, then the dungeon (generated or loaded) is saved to %HOME%/.rlg327/dungeon.rlg327
+On a load or generation, the PC is placed into the middle of a room (in 'special' dungeons this may cause a problem with pathfinding as the PC could spawn without being in a room). This placement of the PC works for ordinary rectangular rooms.
 
-When 'mining' corridors (dungeons.c::link_rooms():329, dungeons.c::make_corridor()) A* is used to determine the paths over Dijkstra for the speed, the chosen heristic is a manhattan distance calculation. After the route has been found, only the WALLs along it are changed to HALLs (dungeons.c), so the rooms are not affected, as they are already FLOORs.
-
-For information on the data structures used see generics_README.
-
-To see examples of the dungeom output, run "make examples". Several examples will be presented.
-
-Square rooms are like round ones, but they fill the entire region given except for the two rows/cols on each side that is left as a buffer (I found that if I left it at one buffer, it looked a little scrunched). To account for the shrinkage, I made the minimum room size a little bigger for the square rooms
+The loading and saving are set up as a library that the main code references. All code that works with the data files directly is in save.c

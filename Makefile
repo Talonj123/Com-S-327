@@ -30,21 +30,23 @@ list_test: int_list.o list_test.c
 	gcc $(gcc_flags) list_test.c int_list.o -o $@
 
 examples: clean $(main_target)
-	./$(main_target) >> examples
+	@echo ----------SAVED------------- >> examples
+	./$(main_target) --save t1 >> examples
 	sleep 1
-	./$(main_target) >> examples
+	./$(main_target) --save t2 >> examples
 	sleep 1
-	./$(main_target) >> examples
+	./$(main_target) --save t3 >> examples
 	sleep 1
-	./$(main_target) >> examples
+	./$(main_target) --save t4 >> examples
+	@echo ---------LOADED------------- >> examples
 	sleep 1
-	./$(main_target) --round >> examples
+	./$(main_target) --load t1 >> examples
 	sleep 1
-	./$(main_target) --round >> examples
+	./$(main_target) --load t2 >> examples
 	sleep 1
-	./$(main_target) --round >> examples
+	./$(main_target) --load t3 >> examples
 	sleep 1
-	./$(main_target) --round >> examples
+	./$(main_target) --load t4 >> examples
 	less examples
 
 clean: clean_general

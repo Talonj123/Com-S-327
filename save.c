@@ -115,8 +115,7 @@ char save_dungeon(dungeon_t* dungeon, char* name)
   {
     homedir = getenv("HOME");
   }
-  //print_types(dungeon);
-  //print_hardnesses(dungeon);
+  check_make_dir();
   char *save_dir = "/.rlg327/";
   int total_length = strlen(homedir) + strlen(save_dir) + strlen(name);
   char* expanded = malloc(total_length + 1);
@@ -180,6 +179,7 @@ dungeon_t* load_dungeon(char* name)
   {
     homedir = getenv("HOME");
   }
+  check_make_dir();
   dungeon_t* dungeon = NULL;
   char *save_dir = "/.rlg327/";
   int total_length = strlen(homedir) + strlen(save_dir) + strlen(name);
@@ -204,8 +204,7 @@ dungeon_t* load_dungeon(char* name)
     version = be32toh(version);
     size = be32toh(size);
     
-    printf("Version: %d\n", version);
-    dungeon = malloc(sizeof(dungeon_t*));
+    dungeon = malloc(sizeof(dungeon_t));
     dungeon->tiles = malloc(sizeof(tile_t*)*21);
     int r;
     for (r = 0; r < 21; r++)

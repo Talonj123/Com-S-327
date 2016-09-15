@@ -148,9 +148,9 @@ int main(int argc, char *argv[])
     hall = ' ';
     floor = ' ';
   }
-  print_dungeon(dungeon, wall, hall, floor, '@');
-  print_distances_non_tunneling(dungeon, wall, hall, floor);
-  print_distances_tunneling(dungeon, wall, hall, floor);
+  print_dungeon(dungeon, wall, hall, floor, '.');
+  //print_distances_non_tunneling(dungeon, wall, hall, floor);
+  //print_distances_tunneling(dungeon, wall, hall, floor);
   int r;
   for (r = 0; r < 21; r++)
   {
