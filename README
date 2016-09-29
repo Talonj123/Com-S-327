@@ -1,6 +1,6 @@
 By default, the dungeon is generated as per assignment 1.01.
-If the program is run with the --load flag, then the dungeon is loaded from %HOME%/.rlg327/dungeon.rlg327
-If the program is run with the --save flag, then the dungeon (generated or loaded) is saved to %HOME%/.rlg327/dungeon.rlg327
-On a load or generation, the PC is placed into the middle of a room (in 'special' dungeons this may cause a problem with pathfinding as the PC could spawn without being in a room). This placement of the PC works for ordinary rectangular rooms.
+The --load and --save flags act as defined in Assignment 1.02.
 
-The loading and saving are set up as a library that the main code references. All code that works with the data files directly is in save.c
+After the dungeon is obtained (loaded/generated), the PC is put in the center of a random room (may cause issues in non-rectangular dungeons).
+Two distance maps are generated for tunnelling and non-tunnelling monsters using dijkstra's (edge weights of 1 for non-tunnelling map). These maps are printed out to the console.
+My priority queue is not fancy, it has linear add and reduce priority operations, which seems to be suficent thus far. The reason I haven't switched to Dr. Scheaffer's heap is that I like my generic setup, and don't want to migrate everything to a new interface.

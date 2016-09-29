@@ -40,6 +40,10 @@ int main(int argc, char *argv[])
     else if (!strcmp("--load", argv[args_processed]))
     {
       load = 1;
+      if (free_load_name)
+      {
+	free(load_name);
+      }
       if (argc > args_processed + 1)
       {
 	/* try parsing a name */
@@ -50,14 +54,14 @@ int main(int argc, char *argv[])
 	{
 	  /* not a switch, and basic checks passed, assume name */
 	  if (strlen(name) > 4 &&
-	      !strcmp(name + strlen(name) - 4, ".rlg327"))
+	      !strcmp(name + strlen(name) - 7, ".rlg327"))
 	  {
 	    load_name = name;
 	  }
 	  else
 	  {
 	    free_load_name = 1;
-	    load_name = malloc(strlen(name) + 5);
+	    load_name = malloc(strlen(name) + 8);
 	    strcpy(load_name, name);
 	    strcpy(load_name + strlen(name), ".rlg327");
 	  }
@@ -68,6 +72,10 @@ int main(int argc, char *argv[])
     else if (!strcmp("--save", argv[args_processed]))
     {
       save = 1;
+      if (free_save_name)
+      {
+	free(save_name);
+      }
       if (argc > args_processed + 1)
       {
 	/* try parsing a name */
@@ -78,14 +86,14 @@ int main(int argc, char *argv[])
 	{
 	  /* not a switch, and basic checks passed, assume name */
 	  if (strlen(name) > 4 &&
-	      !strcmp(name + strlen(name) - 4, ".rlg327"))
+	      !strcmp(name + strlen(name) - 7, ".rlg327"))
 	  {
 	    save_name = name;
 	  }
 	  else
 	  {
 	    free_save_name = 1;
-	    save_name = malloc(strlen(name) + 5);
+	    save_name = malloc(strlen(name) + 8);
 	    strcpy(save_name, name);
 	    strcpy(save_name + strlen(name), ".rlg327");
 	  }
@@ -148,9 +156,9 @@ int main(int argc, char *argv[])
     hall = ' ';
     floor = ' ';
   }
-  print_dungeon(dungeon, wall, hall, floor, '.');
-  //print_distances_non_tunneling(dungeon, wall, hall, floor);
-  //print_distances_tunneling(dungeon, wall, hall, floor);
+  print_dungeon(dungeon, wall, hall, floor, '@');
+  print_distances_non_tunneling(dungeon, wall, hall, floor);
+  print_distances_tunneling(dungeon, wall, hall, floor);
   int r;
   for (r = 0; r < 21; r++)
   {
@@ -169,8 +177,8 @@ void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC
     for (c = 0; c < 80; c++)
     {
       tile_t tile = dungeon->tiles[r][c];
-      if (dungeon->pc.loc.x == tile.loc.x &&
-	  dungeon->pc.loc.y == tile.loc.y)
+      if (((character_t*)&dungeon->pc)->loc.x == tile.loc.x &&
+	  ((character_t*)&dungeon->pc)->loc.y == tile.loc.y)
       {
 	printf("%c", PC);
       }	

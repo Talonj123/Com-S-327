@@ -1,17 +1,20 @@
 #variables
-assignment_num ?= 1.02
+assignment_num ?= 1.03
 name = talbert_james
 main_target = dungeons
 folder_name = $(name).assignment-$(assignment_num)
 
-gcc_flags = -ggdb -Wall -Werror -lm 
+gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon
 
 #Top-level targets
-dungeons: dungeons.a main.c save.a pathfinding.o
+dungeons: dungeons.a main.c save.a pathfinding.o characters.o
 	gcc $(gcc_flags) -c -o main.o main.c 
-	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o
+	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o
 
 all: dungeons
+
+characters.o : characters.c characters.h
+	gcc $(gcc_flags) -c -o $@ characters.c
 
 pathfinding.o: pathfinding.c
 	gcc $(gcc_flags) -c -o $@ pathfinding.c
@@ -20,7 +23,7 @@ save.o: save.c
 	gcc $(gcc_flags) -c -o $@ save.c
 
 save.a: save.o room_list.o
-	ld -r -o $@ save.o room_list.o 
+	ld -r -o $@ save.o room_list.o
 #tile_queue.o
 
 pqueue_test: int_pqueue.o priority_queue.h pqueue_test.c
@@ -92,6 +95,9 @@ room_list.o:
 path_pqueue.o: dungeon/dungeons_private.h data_structures/priority_queue.c
 	cd data_structures; make  pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h IS_POINTER=1; cp path_pqueue.o ../path_pqueue.o
 
+monster_list.o:
+	cd data_structures; make  list TYPE=monster_t* NAME=monster HEADER=characters.h;
+	cp data_structures/monster_list.o monster_list.o
 
 #Common targets
 clean_general:

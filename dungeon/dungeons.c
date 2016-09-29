@@ -6,6 +6,7 @@
 
 #include "dungeons_private.h"
 #include "coordinates.h"
+#include "characters.h"
 
 #define TYPE tile_t*
 #define NAME tile
@@ -715,7 +716,7 @@ dungeon_t* get_dungeon(int rows, int cols, char rectangular)
     }	
     tile_list_t* rooms = find_rooms(dungeon);
     int num_rooms = tile_list_size(rooms);
-    dungeon->pc.loc = tile_list_get(rooms, rand()%num_rooms)->loc;
+    ((character_t*)&dungeon->pc)->loc = tile_list_get(rooms, rand()%num_rooms)->loc;
     if (num_rooms >= 6)
     {
       tile_list_clean(rooms);

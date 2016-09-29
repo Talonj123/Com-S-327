@@ -2,6 +2,7 @@
 #define _DUNGEONS_H_
 
 #include "coordinates.h"
+#include "../characters.h"
 
 #define FLOOR_HARDNESS 0
 #define HALL_HARDNESS 0
@@ -31,17 +32,11 @@ struct tile_t
   int tunnelling_distance_to_pc;
 };
 
-typedef struct player_t
-{
-  point_t loc;
-
-} player_t;
-
 typedef struct dungeon_t
 {
   int rows, cols;
   tile_t** tiles;
-  player_t pc;
+  pc_t pc;
 
 } dungeon_t;
 
