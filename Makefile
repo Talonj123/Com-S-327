@@ -22,7 +22,7 @@ pathfinding.o: pathfinding.c
 save.o: save.c
 	gcc $(gcc_flags) -c -o $@ save.c
 
-save.a: save.o room_list.o
+save.a: save.o room_list.o room_list.o
 	ld -r -o $@ save.o room_list.o
 #tile_queue.o
 
@@ -90,7 +90,7 @@ point_list.o:
 
 room_list.o:
 	cd data_structures; make list TYPE=rectangle_t NAME=room HEADER=dungeon/coordinates.h;
-	cp data_structures/point_list.o point_list.o
+	cp data_structures/room_list.o room_list.o
 
 path_pqueue.o: dungeon/dungeons_private.h data_structures/priority_queue.c
 	cd data_structures; make pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h IS_POINTER=1; cp path_pqueue.o ../path_pqueue.o

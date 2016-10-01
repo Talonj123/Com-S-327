@@ -1,11 +1,18 @@
 # Change Log
+## 2016-09-29 and 30
+### Changes
+ - Refactored the dungeon structure to match the descriptions in lecture
+ - General code cleanup in a few places in the process
+### Removals
+ - Got rid of round rooms, they are all rectangular now
+
 ## 2016-09-27
-### changes
+### Changes
  - Changed assignment number to 1.03 in Makefile
  - Updated README
 
 ## 2016-09-14
-### changes
+### Changes
  - Fixed memory allocation bug when loading a dungeon (allocating space for a pointer, instead of the struct)
 
 ## 2016-09-10
