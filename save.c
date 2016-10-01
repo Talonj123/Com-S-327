@@ -13,6 +13,9 @@
 
 #include "dungeon/coordinates.h"
 
+#define HARDNESS dungeon->hardness[r][c]
+#define TERRAIN dungeon->terrain[r][c]
+
 char* homedir = NULL;
 
 char check_make_dir()
@@ -80,6 +83,7 @@ char save_dungeon(const dungeon_t* dungeon, char* name)
     for (i = 0; i < dungeon->num_rooms; i++)
     {
       rectangle_t room = dungeon->rooms[i];
+      printf("Saving room %d\n", i);
       char points[4];
       points[0] = room.x;
       points[1] = room.width;
@@ -127,9 +131,21 @@ dungeon_t* load_dungeon(char* name)
     size = be32toh(size);
     
     dungeon = malloc(sizeof(dungeon_t));
-    fread(dungeon->hardness, sizeof(dungeon->hardness[0][0]), DUNGEON_ROWS * DUNGEON_COLS, file);
+    fread(dungeon->hardness, 1, DUNGEON_ROWS * DUNGEON_COLS, file);
+    int r, c;
+    for (r = 0; r < DUNGEON_ROWS; r++)
+    {
+      for (c = 0; c < DUNGEON_COLS; c++)
+      {
+	if (HARDNESS == 0)
+	  TERRAIN = HALL;
+	else
+	  TERRAIN = WALL;
+      }  
+    }
 
-    dungeon->num_rooms = (size - 14 + 80*21)/4;
+    dungeon->num_rooms = (size - 14 - 80*21)/4;
+    dungeon->rooms = malloc(sizeof(rectangle_t)*dungeon->num_rooms);
     int i;
     for (i = 0; i < dungeon->num_rooms; i++)
     {
@@ -138,6 +154,10 @@ dungeon_t* load_dungeon(char* name)
       bounds.width = fgetc(file);
       bounds.y = fgetc(file);
       bounds.height = fgetc(file);
+
+      dungeon->rooms[i] = bounds;
+
+      printf("(%d, %d) + (%d, %d)\n", bounds.x, bounds.y, bounds.width, bounds.height);
 
       int r, c;
       for (r = bounds.y; r < bounds.y + bounds.height; r++)

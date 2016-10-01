@@ -421,7 +421,8 @@ dungeon_t* dungeon_new()
       }
       else
       {
-	dungeon->rooms[rooms_created++] = bounds;
+	rectangle_t actual = {bounds.x + 2, bounds.y + 2, bounds.width - 4, bounds.height - 4};
+	dungeon->rooms[rooms_created++] = actual;
 	fails = 0;
       }
     }
