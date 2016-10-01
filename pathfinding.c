@@ -93,7 +93,7 @@ void get_distances_non_tunneling(dungeon_t* dungeon)
 
 int get_cost(dungeon_t* dungeon, point_t tile)
 {
-  int hardness = dungeon->hardness[tile.y][tile.x];
+  hardness_t hardness = dungeon->hardness[tile.y][tile.x];
   if (hardness < 85)
   {
     return 1;
@@ -107,6 +107,7 @@ int get_cost(dungeon_t* dungeon, point_t tile)
     return 3;
   }
   /* high enough that it won't ever be part of a path */
+  /* shouldn't happen anyway */
   return 255;
 }
 
@@ -116,9 +117,9 @@ int compare_tile_dist_tunneling(point_t a, point_t b)
    * and the whold ething re-evaluated. works because the tile that will produce the 
    * smallest values in other tiles get run first.
    */
-  return (TUNNELING(a) - TUNNELING(b)) + (HARDNESS(a) - HARDNESS(b));
+  return (TUNNELING(a) - TUNNELING(b))/* + (HARDNESS(a) - HARDNESS(b))*/;
 }
-
+/*
 void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost, point_t new_tile)
 {
   if (new_tile.x < 0 || new_tile.x > DUNGEON_COLS - 1 ||
@@ -127,6 +128,24 @@ void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost,
     return;
   }
   if (HARDNESS(new_tile) < MAX_HARDNESS)
+  {
+    int new_cost = cCost + get_cost(dungeon, new_tile);
+    if (TUNNELING(new_tile) > new_cost)
+    {
+      TUNNELING(new_tile) = new_cost;
+      point_pqueue_decrease_priority_add(pqueue, new_tile, point_equals);
+    }
+  }
+}
+*/
+void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost, point_t new_tile)
+{
+  if (new_tile.x < 0 || new_tile.x > DUNGEON_COLS - 1 ||
+      new_tile.y < 0 || new_tile.y > DUNGEON_ROWS - 1)
+  {
+    return;
+  }
+  if (dungeon->hardness[new_tile.y][new_tile.x] < MAX_HARDNESS)
   {
     int new_cost = cCost + get_cost(dungeon, new_tile);
     if (TUNNELING(new_tile) > new_cost)
@@ -147,16 +166,16 @@ void get_distances_tunneling(dungeon_t* target)
   {
     loc = point_pqueue_dequeue(pqueue);
 
-    point_t l  = {loc.x - 1, loc.y};
-    point_t ul = {loc.x - 1, loc.y - 1};
-    point_t u  = {loc.x, loc.y - 1};
-    point_t ur = {loc.x + 1, loc.y - 1};
-    point_t r  = {loc.x + 1, loc.y};
-    point_t dr = {loc.x + 1, loc.y + 1};
-    point_t d  = {loc.x, loc.y + 1};
-    point_t dl = {loc.x - 1, loc.y + 1};
+    point_t l  = {loc.x -1, loc.y +0};
+    point_t ul = {loc.x -1, loc.y -1};
+    point_t u  = {loc.x +0, loc.y -1};
+    point_t ur = {loc.x +1, loc.y -1};
+    point_t r  = {loc.x +1, loc.y +0};
+    point_t dr = {loc.x +1, loc.y +1};
+    point_t d  = {loc.x +0, loc.y +1};
+    point_t dl = {loc.x -1, loc.y +1};
 
-    int distance = DISTANCE(loc);
+    int distance = TUNNELING(loc);
     visit_tile_tunneling(dungeon, pqueue, distance, u);
     visit_tile_tunneling(dungeon, pqueue, distance, ur);
     visit_tile_tunneling(dungeon, pqueue, distance, r);
