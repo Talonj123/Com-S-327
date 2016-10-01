@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
   print_dungeon(dungeon, wall, hall, floor, '@');
   print_distances_non_tunneling(dungeon, wall, hall, floor);
   print_distances_tunneling(dungeon, wall, hall, floor);
+
   dungeon_free(dungeon);
   return 0;
 }

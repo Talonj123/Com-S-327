@@ -26,16 +26,20 @@
 #include "data_structures/priority_queue.h"
 
 #define HARDNESS dungeon->hardness[r][c]
-#define HARDNESS_AT(point) dungeon->hardness[point.x][point.y]
+#define HARDNESS_AT(point) dungeon->hardness[point.y][point.x]
 #define TERRAIN dungeon->terrain[r][c]
-#define TERRAIN_AT(point) dungeon->terrain[point.x][point.y]
+#define TERRAIN_AT(point) dungeon->terrain[point.y][point.x]
+#define DISTANCE dungeon->distance_to_pc[r][c]
+#define DISTANCE_AT(point) dungeon->distance_to_pc[point.y][point.x]
+#define TUNNELING dungeon->tunneling_distance_to_pc[r][c]
+#define TUNNELING_AT(point) dungeon->tunneling_distance_to_pc[point.y][point.x]
 
 #define DIJKSTRA_TURN_COST (10)
 #define DIJKSTRA_BASE_MOVE_COST (0)
 #define DIJKSTRA_FLOOR_COST 30
 #define DIJKSTRA_HALL_COST 5
 
-char check_join_domain(dungeon_t* dungeon, point_queue_t* domains, point_t to_check, char to_join)
+char check_join_domain(dungeon_t* dungeon, point_queue_t* domains, point_t to_check, hardness_t  to_join)
 {
   if (to_check.x < 0 || to_check.x >= DUNGEON_COLS || to_check.y < 0 || to_check.y >= DUNGEON_ROWS)
   {
@@ -126,7 +130,7 @@ void soften(dungeon_t* dungeon)
 /* Generates a dungeon of the given size, filled with walls
  *   with random hardnesses, but the borders are 100% solid
  */
-dungeon_t* get_blank_dungeon(int rows, int cols)
+dungeon_t* get_blank_dungeon()
 {
   /* freed by client */
   dungeon_t* dungeon = malloc(sizeof(dungeon_t));
@@ -141,10 +145,13 @@ dungeon_t* get_blank_dungeon(int rows, int cols)
     for (c = 0; c < DUNGEON_COLS; c++)
     {
       TERRAIN = WALL;
+      HARDNESS = 255;
+      DISTANCE = INT_MAX;
+      TUNNELING = INT_MAX;
       /* Check for edge, if an edge tile, set to max hardness (100% hard, 0% breakable)
            otherwise, use a random value (assumes that RAND_MAX >> MAX_HARDNESS)
       */
-      if (r == 0 || c == 0 || r == (rows-1) || c == (cols-1))
+      if (r == 0 || c == 0 || r == (DUNGEON_ROWS-1) || c == (DUNGEON_COLS-1))
       {
         HARDNESS = MAX_HARDNESS;
       }
@@ -244,14 +251,13 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
   /* the list of nodes to check out, 'cheapest' first */
   path_pqueue_t* to_visit = new_path_pqueue(dijkstra_pqueue_compare);
   
-  tile_dijkstra_t** tile_data = malloc(sizeof(tile_dijkstra_t*)*DUNGEON_ROWS);
+  tile_dijkstra_t tile_data[DUNGEON_ROWS][DUNGEON_COLS];
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
-    tile_data[r] = malloc(sizeof(tile_dijkstra_t) * DUNGEON_COLS);
     for (c = 0; c < DUNGEON_COLS; c++)
     {
-      point_t t = {r, c};
+      point_t t = {c, r};
       tile_data[r][c].tile = t;
       tile_data[r][c].total_cost = INT_MAX;
       tile_data[r][c].parent = NULL;
@@ -292,7 +298,6 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
       new_cost += HARDNESS_AT(data->tile);
       break;
     }
-
     if (loc.x > 0)
     {
       tile_dijkstra_t* tile = &tile_data[loc.y][loc.x - 1];
@@ -325,17 +330,11 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
     if (TERRAIN_AT(cell->tile) == WALL)
     {
       TERRAIN_AT(cell->tile) = HALL;
-      HARDNESS_AT(cell->tile) = DIJKSTRA_FLOOR_COST;
+      HARDNESS_AT(cell->tile) = FLOOR_HARDNESS;
     }
 
     cell = cell->parent;
   }
-
-  for (r = 0; r < DUNGEON_ROWS; r++)
-  {
-    free(tile_data[r]);
-  }
-  free(tile_data);
 }
 
 void link_rooms(dungeon_t* dungeon)
@@ -353,27 +352,27 @@ void link_rooms(dungeon_t* dungeon)
   }
 }
 
-dungeon_t* dungeon_new(int rows, int cols)
+dungeon_t* dungeon_new()
 {
   dungeon_t* dungeon;
   /* it is very uncommon to have < 7 rooms, so this loop should run twice at most */
   while (1)
   {
     //TODO:
-    dungeon = get_blank_dungeon(rows, cols);
+    dungeon = get_blank_dungeon();
     /* reduce for sparser dungeons */
     int max_fails = 50;
     int fails = 0;
 
     int i;
 
-    rectangle_t outer_bounds = {1, 1, cols - 2, rows - 2};
+    rectangle_t outer_bounds = {1, 1, DUNGEON_COLS - 2, DUNGEON_ROWS - 2};
 
     int min_width = 8;
     int min_height = 8;
 
-    int max_width = cols/8;
-    int max_height = rows/8;
+    int max_width = DUNGEON_COLS/8;
+    int max_height = DUNGEON_ROWS/8;
     int rooms_created = 0;
     dungeon->num_rooms = 8;
     dungeon->rooms = malloc(sizeof(rectangle_t)*8);

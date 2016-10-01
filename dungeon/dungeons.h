@@ -12,7 +12,7 @@
 #define DUNGEON_ROWS 21
 #define DUNGEON_COLS 80
 
-typedef int hardness_t;
+typedef unsigned char hardness_t;
 
 typedef enum tile_type
 {
@@ -21,7 +21,7 @@ typedef enum tile_type
 
 typedef struct dungeon_t
 {
-char hardness[DUNGEON_ROWS][DUNGEON_COLS];
+hardness_t hardness[DUNGEON_ROWS][DUNGEON_COLS];
 tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
 int distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
 int tunneling_distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
@@ -33,7 +33,7 @@ pc_t pc;
 } dungeon_t;
 
 //dungeon_t* get_blank_dungeon(int rows, int cols);
-dungeon_t* dungeon_new(int rows, int cols);
+dungeon_t* dungeon_new();
 void dungeon_free(dungeon_t* dungeon);
 
 #endif //_DUNGEONS_H_

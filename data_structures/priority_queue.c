@@ -43,7 +43,6 @@ QUEUE_T* CAT2(NAME, _pqueue_enqueue)(QUEUE_T* queue, TYPE data)
     {
       newNode->next = queue->head;
       queue->head = newNode;
-      queue->tail->next = NULL;
       return queue;
     }
     /* if it gets to here, then the new node goes after the head at some point */
@@ -74,7 +73,6 @@ QUEUE_T* CAT2(NAME, _pqueue_enqueue)(QUEUE_T* queue, TYPE data)
     queue->head = newNode;
     queue->tail = newNode;
   }
-  queue->tail->next = NULL;
   return queue;
 }
 
