@@ -102,9 +102,10 @@ void CAT2(NAME, _list_clear)(LIST_T* list)
   list->size = 0;
 }
 
-void CAT2(NAME, _list_clean)(LIST_T* list)
+void CAT2(NAME, _list_free)(LIST_T* list)
 {
   free(list->data);
+  free(list);
 }
 
 size_t CAT2(NAME, _list_size)(LIST_T* list)

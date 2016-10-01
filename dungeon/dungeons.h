@@ -9,6 +9,9 @@
 #define MAX_HARDNESS (hardness_t)255
 #define MIN_HARDNESS (hardness_t)10
 
+#define DUNGEON_ROWS 21
+#define DUNGEON_COLS 80
+
 typedef int hardness_t;
 
 typedef enum tile_type
@@ -16,32 +19,21 @@ typedef enum tile_type
   FLOOR, HALL, WALL
 } tile_type;
 
-typedef struct tile_t tile_t;
-struct tile_t
-{
-  tile_type type;
-  point_t loc;
-
-  /* tiles with a high hardness are harder to dig/mine/break */
-  hardness_t hardness;
-  char is_room_center;
-
-  tile_t *up, *down, *right, *left;
-
-  int distance_to_pc;
-  int tunnelling_distance_to_pc;
-};
-
 typedef struct dungeon_t
 {
-  int rows, cols;
-  tile_t** tiles;
-  pc_t pc;
+char hardness[DUNGEON_ROWS][DUNGEON_COLS];
+tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
+int distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
+int tunneling_distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
+rectangle_t *rooms;
+int num_rooms;
+
+pc_t pc;
 
 } dungeon_t;
 
 //dungeon_t* get_blank_dungeon(int rows, int cols);
-dungeon_t* get_dungeon(int rows, int cols, char rectangular);
-void set_tile_pointers(dungeon_t* dungeon);
+dungeon_t* dungeon_new(int rows, int cols);
+void dungeon_free(dungeon_t* dungeon);
 
 #endif //_DUNGEONS_H_

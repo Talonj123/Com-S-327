@@ -35,5 +35,5 @@ TYPE CAT2(NAME, _list_remove)(LIST_T* list, size_t index);
 char CAT2(NAME, _list_contains)(LIST_T* list, TYPE data, char (*equals)(TYPE a, TYPE b));
 char CAT2(NAME, _list_is_empty)(LIST_T* list);
 void CAT2(NAME, _list_clear)(LIST_T* list);
-void CAT2(NAME, _list_clean)(LIST_T* list);
+void CAT2(NAME, _list_free)(LIST_T* list);
 size_t CAT2(NAME, _list_size)(LIST_T* list);

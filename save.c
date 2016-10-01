@@ -13,18 +13,6 @@
 
 #include "dungeon/coordinates.h"
 
-#define TYPE rectangle_t
-#define NAME room
-#include "data_structures/list.h"
-
-#define TYPE tile_t*
-#define NAME tile
-#include "data_structures/list.h"
-
-#define TYPE tile_t*
-#define NAME tile
-#include "data_structures/queue.h"
-
 char* homedir = NULL;
 
 char check_make_dir()
@@ -52,63 +40,7 @@ char check_make_dir()
   return to_return;
 }
 
-rectangle_t get_bounds_rect(dungeon_t* dungeon, tile_t* center)
-{
-  rectangle_t bounds = {center->loc.x, center->loc.y, 1, 1};
-  while (dungeon->tiles[center->loc.y][bounds.x].type == FLOOR)
-  {
-    bounds.x--;
-    bounds.width++;
-  }
-  bounds.x++;
-  while (dungeon->tiles[center->loc.y][bounds.x + bounds.width].type == FLOOR)
-  {
-    bounds.width++;
-  }
-
-  while (dungeon->tiles[bounds.y][center->loc.x].type == FLOOR)
-  {
-    bounds.y--;
-    bounds.height++;
-  }
-  bounds.y++;
-
-  while (dungeon->tiles[bounds.y + bounds.height][center->loc.x].type == FLOOR)
-  {
-    bounds.height++;
-  }
-  
-  return bounds;
-}
-
-room_list_t* get_rooms(dungeon_t* dungeon)
-{
-  /* collect all the rooms, then find the bounds */
-  tile_queue_t* centers = new_tile_queue();
-  int r, c;
-  for (r = 0; r < dungeon->rows; r++)
-  {
-    for (c = 0; c < dungeon->cols; c++)
-    {
-      if (dungeon->tiles[r][c].is_room_center)
-      {
-	tile_queue_enqueue(centers, &dungeon->tiles[r][c]);
-      }
-    }  
-  }
-
-  room_list_t* rooms = new_room_list();
-  while (!tile_queue_is_empty(centers))
-  {
-    tile_t* center = tile_queue_dequeue(centers);
-    rectangle_t bounds = get_bounds_rect(dungeon, center);
-    room_list_add(rooms, bounds);
-  }
-  free(centers);
-  return rooms;
-}
-
-char save_dungeon(dungeon_t* dungeon, char* name)
+char save_dungeon(const dungeon_t* dungeon, char* name)
 {
   char error = 0;
   if (homedir == NULL)
@@ -124,8 +56,7 @@ char save_dungeon(dungeon_t* dungeon, char* name)
   strcpy(expanded + strlen(homedir), save_dir);
   strcpy(expanded + strlen(homedir) + strlen(save_dir), name);
 
-  room_list_t* rooms = get_rooms(dungeon);
-  uint32_t size = 14 + (dungeon->rows*dungeon->cols) + (room_list_size(rooms)*4);
+  uint32_t size = 14 + (DUNGEON_ROWS * DUNGEON_COLS) + (dungeon->num_rooms*4);
   FILE* file = fopen(expanded, "w");
   if (file == NULL)
   {
@@ -138,24 +69,17 @@ char save_dungeon(dungeon_t* dungeon, char* name)
     uint32_t version = 0;
     
     version = htobe32(version);
-    fwrite(&version, 4, 1, file);
+    fwrite(&version, sizeof(version), 1, file);
 
     size = htobe32(size);
-    fwrite(&size, 4, 1, file);
+    fwrite(&size, sizeof(size), 1, file);
 
-    int r, c;
-    for (r = 0; r < dungeon->rows; r++)
-    {
-      for (c = 0; c < dungeon->cols; c++)
-      {
-	char hardness = dungeon->tiles[r][c].hardness;
-        fputc(hardness, file);
-      }
-    }
+    fwrite(dungeon->hardness, sizeof(dungeon->hardness[0][0]), DUNGEON_ROWS * DUNGEON_COLS, file);
+
     int i;
-    for (i = 0; i < room_list_size(rooms); i++)
+    for (i = 0; i < dungeon->num_rooms; i++)
     {
-      rectangle_t room = room_list_get(rooms, i);
+      rectangle_t room = dungeon->rooms[i];
       char points[4];
       points[0] = room.x;
       points[1] = room.width;
@@ -165,8 +89,6 @@ char save_dungeon(dungeon_t* dungeon, char* name)
       fwrite(points, 1, 4, file);
     }
     fclose(file);
-    room_list_clean(rooms);
-    free(rooms);
   }
 
   free(expanded);
@@ -205,65 +127,31 @@ dungeon_t* load_dungeon(char* name)
     size = be32toh(size);
     
     dungeon = malloc(sizeof(dungeon_t));
-    dungeon->tiles = malloc(sizeof(tile_t*)*21);
-    int r;
-    for (r = 0; r < 21; r++)
-    {
-      dungeon->tiles[r] = malloc(sizeof(tile_t)*80);
-    }
-    dungeon->rows = 21;
-    dungeon->cols = 80;
-    set_tile_pointers(dungeon);
-    /* dungeon allocated */
-    for (r = 0; r < 21; r++)
-    {
-      int c;
-      for (c = 0; c < 80; c++)
-      {
-	dungeon->tiles[r][c].loc.x = c;
-	dungeon->tiles[r][c].loc.y = r;
-	dungeon->tiles[r][c].hardness = fgetc(file);
-	if (dungeon->tiles[r][c].hardness == 0)
-	{
-	  dungeon->tiles[r][c].type = HALL;
-	}
-	else 
-	{
-	  dungeon->tiles[r][c].type = WALL;
+    fread(dungeon->hardness, sizeof(dungeon->hardness[0][0]), DUNGEON_ROWS * DUNGEON_COLS, file);
 
-	}
-      }
-    }
-    //print_hardnesses(dungeon);
+    dungeon->num_rooms = (size - 14 + 80*21)/4;
     int i;
-    tile_list_t* rooms = new_tile_list();
-    for (i = 14 + 80*21; i < size; i+=4)
+    for (i = 0; i < dungeon->num_rooms; i++)
     {
       rectangle_t bounds;
       bounds.x = fgetc(file);
       bounds.width = fgetc(file);
       bounds.y = fgetc(file);
       bounds.height = fgetc(file);
-      point_t center;
-      center.x = rect_center_x(bounds);
-      center.y = rect_center_y(bounds);
-      dungeon->tiles[center.y][center.x].is_room_center = 1;
-      tile_list_add(rooms, &dungeon->tiles[center.y][center.x]);
+
       int r, c;
       for (r = bounds.y; r < bounds.y + bounds.height; r++)
       {
 	for (c = bounds.x; c < bounds.x + bounds.width; c++)
 	{
-	  if (dungeon->tiles[r][c].hardness == FLOOR_HARDNESS)
+	  if (dungeon->hardness[r][c] == FLOOR_HARDNESS)
 	  {
-	    dungeon->tiles[r][c].type = FLOOR;
+	    dungeon->terrain[r][c] = FLOOR;
 	  }
 	}	
       }
     }
-    dungeon->pc.loc = tile_list_get(rooms, rand() % tile_list_size(rooms))->loc;
-    tile_list_clean(rooms);
-    free(rooms);
+    ((character_t*)&dungeon->pc)->loc = rect_center(dungeon->rooms[rand() % dungeon->num_rooms]);
     fclose(file); 
   }
   free(expanded);

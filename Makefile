@@ -60,40 +60,40 @@ clean: clean_general
 	cd data_structures; make clean
 
 #dependancies
-dungeons.a: dungeon/*.c dungeon/*.c path_pqueue.o tile_list.o tile_queue.o tile_pqueue.o
+dungeons.a: dungeon/*.c dungeon/*.c path_pqueue.o point_list.o point_queue.o point_pqueue.o
 	cd dungeon; make  dungeons.a;
-	ld -r -o $@ dungeon/dungeons.a path_pqueue.o tile_list.o tile_queue.o tile_pqueue.o
+	ld -r -o $@ dungeon/dungeons.a path_pqueue.o point_list.o point_queue.o point_pqueue.o
 
 %_list.o: data_structures/list.c
-	cd data_structures; make  list TYPE=$*; cp $*_list.o ../$*_list.o
+	cd data_structures; make list TYPE=$*; cp $*_list.o ../$*_list.o
 	cp data_structures/$*_list.o $*_list.o
 
 %_queue.o: data_structures/queue.c¥
-	cd data_structures; make  queue TYPE=$*; cp $*_queue.o ../$*_queue.o
+	cd data_structures; make queue TYPE=$*; cp $*_queue.o ../$*_queue.o
 	cp data_structures/$*_queue.o $*_queue.o
 
 %_pqueue.o: data_structures/priority_queue.c
-	cd data_structures; make  pqueue TYPE=$*; cp $*_pqueue.o ../$*_pqueue.o
+	cd data_structures; make pqueue TYPE=$*; cp $*_pqueue.o ../$*_pqueue.o
 	cp data_structures/$*_pqueue.o $*_pqueue.o
 
-tile_queue.o:
-	cd data_structures; make  queue TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h IS_POINTER=1;
-	cp data_structures/tile_queue.o tile_queue.o
+point_queue.o:
+	cd data_structures; make queue TYPE=point_t NAME=point HEADER=dungeon/dungeons.h;
+	cp data_structures/point_queue.o point_queue.o
 
-tile_pqueue.o:
-	cd data_structures; make  pqueue TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h IS_POINTER=1;
-	cp data_structures/tile_pqueue.o tile_pqueue.o
+point_pqueue.o:
+	cd data_structures; make pqueue TYPE=point_t NAME=point HEADER=dungeon/dungeons.h;
+	cp data_structures/point_pqueue.o point_pqueue.o
 
-tile_list.o:
-	cd data_structures; make  list TYPE=tile_t* NAME=tile HEADER=dungeon/dungeons.h IS_POINTER=1;
-	cp data_structures/tile_list.o tile_list.o
+point_list.o:
+	cd data_structures; make list TYPE=point_t NAME=point HEADER=dungeon/dungeons.h;
+	cp data_structures/point_list.o point_list.o
 
 room_list.o:
-	cd data_structures; make  list TYPE=rectangle_t NAME=room HEADER=dungeon/coordinates.h;
-	cp data_structures/room_list.o room_list.o
+	cd data_structures; make list TYPE=rectangle_t NAME=room HEADER=dungeon/coordinates.h;
+	cp data_structures/point_list.o point_list.o
 
 path_pqueue.o: dungeon/dungeons_private.h data_structures/priority_queue.c
-	cd data_structures; make  pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h IS_POINTER=1; cp path_pqueue.o ../path_pqueue.o
+	cd data_structures; make pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h IS_POINTER=1; cp path_pqueue.o ../path_pqueue.o
 
 monster_list.o:
 	cd data_structures; make  list TYPE=monster_t* NAME=monster HEADER=characters.h;

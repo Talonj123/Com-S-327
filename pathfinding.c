@@ -5,152 +5,166 @@
 
 #include "dungeon/dungeons.h"
 
-#define NAME tile
-#define TYPE tile_t*
-#define IS_POINTER 1
+#define TYPE point_t
+#define NAME point
 #include "data_structures/priority_queue.h"
 
-void get_distances_non_tunnelling(dungeon_t* target);
-void get_distances_tunnelling(dungeon_t* target);
+#define DISTANCE(point) dungeon->distance_to_pc[point.y][point.x]
+#define TUNNELING(point) dungeon->tunneling_distance_to_pc[point.y][point.x]
+#define TERRAIN(point) dungeon->terrain[point.y][point.x]
+#define HARDNESS(point) dungeon->hardness[point.y][point.x]
+
+void get_distances_non_tunneling(dungeon_t* target);
+void get_distances_tunneling(dungeon_t* target);
+
+/* The current dungeon being targeted */
+dungeon_t* dungeon;
 
 void get_distances(dungeon_t* target)
 {
+  dungeon = target;
   int r, c;
-  for (r = 0; r < target->rows; r++)
+  for (r = 0; r < DUNGEON_ROWS; r++)
   {
-    for (c = 0; c < target->cols; c++)
+    for (c = 0; c < DUNGEON_COLS; c++)
     {
-      target->tiles[r][c].distance_to_pc = INT_MAX;
-      target->tiles[r][c].tunnelling_distance_to_pc = INT_MAX;
+      target->distance_to_pc[r][c] = INT_MAX;
+      target->tunneling_distance_to_pc[r][c] = INT_MAX;
     }
-  } 
-  get_distances_non_tunnelling(target);
-  get_distances_tunnelling(target);
+  }
+  get_distances_non_tunneling(target);
+  get_distances_tunneling(target);
 }
 
-int compare_tile_dist_non_tunnelling(tile_t* a, tile_t* b)
+int compare_tile_dist_non_tunneling(point_t a, point_t b)
 {
-  return (a->distance_to_pc - b->distance_to_pc);
+  return (DISTANCE(a) - DISTANCE(b));
 }
 
-void visit_tile_non_tunnelling(tile_pqueue_t* pqueue, int cCost, tile_t* new_tile)
+void visit_tile_non_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost, point_t new_tile)
 {
-  if ((new_tile != NULL) && (new_tile->type != WALL))
+  if (new_tile.x < 0 || new_tile.x > DUNGEON_COLS - 1 ||
+      new_tile.y < 0 || new_tile.y > DUNGEON_ROWS - 1)
   {
-    if (new_tile->distance_to_pc > cCost + 1)
+    return;
+  }
+  if (dungeon->terrain[new_tile.y][new_tile.x] != WALL)
+  {
+    if (DISTANCE(new_tile) > cCost + 1)
     {
-      new_tile->distance_to_pc = cCost + 1;
-      tile_pqueue_decrease_priority_add_ptr(pqueue, new_tile);
+      DISTANCE(new_tile) = cCost + 1;
+      point_pqueue_decrease_priority_add(pqueue, new_tile, point_equals);
     }
   }
 }
 
-void get_distances_non_tunnelling(dungeon_t* target)
+void get_distances_non_tunneling(dungeon_t* dungeon)
 {
-  tile_pqueue_t* pqueue = new_tile_pqueue(compare_tile_dist_non_tunnelling);
-  point_t loc = target->pc.loc;
-  tile_t* start = &target->tiles[loc.y][loc.x];
-  start->distance_to_pc = 0;
-  tile_pqueue_enqueue(pqueue, start);
-  while (!tile_pqueue_is_empty(pqueue))
+  point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_non_tunneling);
+  point_t loc = ((character_t*)&dungeon->pc)->loc;
+  DISTANCE(loc) = 0;
+  point_pqueue_enqueue(pqueue, loc);
+  while (!point_pqueue_is_empty(pqueue))
   {
-    tile_t* visiting = tile_pqueue_dequeue(pqueue);
-    visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->left);
-    visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->right);
-    visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->up);
-    visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->down);
+    loc = point_pqueue_dequeue(pqueue);
+    point_t l  = {loc.x - 1, loc.y};
+    point_t ul = {loc.x - 1, loc.y - 1};
+    point_t u  = {loc.x, loc.y - 1};
+    point_t ur = {loc.x + 1, loc.y - 1};
+    point_t r  = {loc.x + 1, loc.y};
+    point_t dr = {loc.x + 1, loc.y + 1};
+    point_t d  = {loc.x, loc.y + 1};
+    point_t dl = {loc.x - 1, loc.y + 1};
 
-    if (visiting->left != NULL)
-    {
-      visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->left->up);
-      visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->left->down);
-    }
-    if (visiting->right != NULL)
-    {
-      visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->right->up);
-      visit_tile_non_tunnelling(pqueue, visiting->distance_to_pc, visiting->right->down);
-    }
+    int distance = DISTANCE(loc);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, u);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, ur);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, r);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, dr);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, d);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, dl);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, l);
+    visit_tile_non_tunneling(dungeon, pqueue, distance, ul);
   }
-  free(pqueue);
+  point_pqueue_free(pqueue);
 }
 
 /**************************************************************************************/
 
-int get_cost(tile_t* tile)
+int get_cost(dungeon_t* dungeon, point_t tile)
 {
-  if (tile->hardness < 85)
+  int hardness = dungeon->hardness[tile.y][tile.x];
+  if (hardness < 85)
   {
     return 1;
   }
-  else if (tile->hardness < 171)
+  else if (hardness < 171)
   {
     return 2;
   }
-  else if (tile->hardness < 255)
+  else if (hardness < 255)
   {
     return 3;
   }
-  return 200;
+  /* high enough that it won't ever be part of a path */
+  return 255;
 }
 
-int compare_tile_dist_tunnelling(tile_t* a, tile_t* b)
+int compare_tile_dist_tunneling(point_t a, point_t b)
 {
   /* Added the hardness element to reduce the number of times that a tile gets re-added
    * and the whold ething re-evaluated. works because the tile that will produce the 
    * smallest values in other tiles get run first.
    */
-  return (a->tunnelling_distance_to_pc - b->tunnelling_distance_to_pc) + (a->hardness - b->hardness);
+  return (TUNNELING(a) - TUNNELING(b)) + (HARDNESS(a) - HARDNESS(b));
 }
 
-void visit_tile_tunnelling(tile_pqueue_t* pqueue, int cCost, tile_t* new_tile, tile_t* visiting)
+void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost, point_t new_tile)
 {
-  if ((new_tile != NULL) && (new_tile->hardness < MAX_HARDNESS))
+  if (new_tile.x < 0 || new_tile.x > DUNGEON_COLS - 1 ||
+      new_tile.y < 0 || new_tile.y > DUNGEON_ROWS - 1)
   {
-    int new_cost = cCost + get_cost(new_tile);
-    
-    if (new_cost < cCost)
+    return;
+  }
+  if (HARDNESS(new_tile) < MAX_HARDNESS)
+  {
+    int new_cost = cCost + get_cost(dungeon, new_tile);
+    if (TUNNELING(new_tile) > new_cost)
     {
-      printf("Cost got smaller\n");
-    }
-    int dx = abs(visiting->loc.x - new_tile->loc.x);
-    int dy = abs(visiting->loc.y - new_tile->loc.y);
-    if ((dx > 1) || (dy > 1))
-    {
-      printf("(%d, %d) has a link to (%d, %d)\n", visiting->loc.x, visiting->loc.y, new_tile->loc.x, new_tile->loc.y);
-    }
-    if (new_tile->tunnelling_distance_to_pc > new_cost)
-    {
-      new_tile->tunnelling_distance_to_pc = new_cost;
-      tile_pqueue_decrease_priority_add_ptr(pqueue, new_tile);
+      TUNNELING(new_tile) = new_cost;
+      point_pqueue_decrease_priority_add(pqueue, new_tile, point_equals);
     }
   }
 }
 
-void get_distances_tunnelling(dungeon_t* target)
+void get_distances_tunneling(dungeon_t* target)
 {
-  tile_pqueue_t* pqueue = new_tile_pqueue(compare_tile_dist_tunnelling);
-  point_t loc = target->pc.loc;
-  tile_t* start = &target->tiles[loc.y][loc.x];
-  start->tunnelling_distance_to_pc = 0;
-  tile_pqueue_enqueue(pqueue, start);
-  while (!tile_pqueue_is_empty(pqueue))
+  point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_tunneling);
+  point_t loc = ((character_t*)&target->pc)->loc;
+  TUNNELING(loc) = 0;
+  point_pqueue_enqueue(pqueue, loc);
+  while (!point_pqueue_is_empty(pqueue))
   {
-    tile_t* visiting = tile_pqueue_dequeue(pqueue);
-    visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->left, visiting);
-    visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->right, visiting);
-    visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->up, visiting);
-    visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->down, visiting);
+    loc = point_pqueue_dequeue(pqueue);
 
-    if (visiting->left != NULL)
-    {
-      visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->left->up, visiting);
-      visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->left->down, visiting);
-    }
-    if (visiting->right != NULL)
-    {
-      visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->right->up, visiting);
-      visit_tile_tunnelling(pqueue, visiting->tunnelling_distance_to_pc, visiting->right->down, visiting);
-    }
+    point_t l  = {loc.x - 1, loc.y};
+    point_t ul = {loc.x - 1, loc.y - 1};
+    point_t u  = {loc.x, loc.y - 1};
+    point_t ur = {loc.x + 1, loc.y - 1};
+    point_t r  = {loc.x + 1, loc.y};
+    point_t dr = {loc.x + 1, loc.y + 1};
+    point_t d  = {loc.x, loc.y + 1};
+    point_t dl = {loc.x - 1, loc.y + 1};
+
+    int distance = DISTANCE(loc);
+    visit_tile_tunneling(dungeon, pqueue, distance, u);
+    visit_tile_tunneling(dungeon, pqueue, distance, ur);
+    visit_tile_tunneling(dungeon, pqueue, distance, r);
+    visit_tile_tunneling(dungeon, pqueue, distance, dr);
+    visit_tile_tunneling(dungeon, pqueue, distance, d);
+    visit_tile_tunneling(dungeon, pqueue, distance, dl);
+    visit_tile_tunneling(dungeon, pqueue, distance, l);
+    visit_tile_tunneling(dungeon, pqueue, distance, ul);
   }
-  free(pqueue);
+  point_pqueue_free(pqueue);
 }

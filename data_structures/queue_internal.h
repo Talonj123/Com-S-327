@@ -25,3 +25,4 @@ QUEUE_T* CAT2(NAME, _queue_enqueue)(QUEUE_T* queue, TYPE data);
 TYPE CAT2(NAME, _queue_dequeue)(QUEUE_T* queue);
 char CAT2(NAME, _queue_is_empty)(QUEUE_T* queue);
 void CAT2(NAME, _queue_clear)(QUEUE_T* queue);
+void CAT2(NAME, _queue_free)(QUEUE_T* queue);

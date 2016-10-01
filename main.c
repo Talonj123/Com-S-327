@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    dungeon = get_dungeon(21, 80, !round_rooms);
+    dungeon = dungeon_new(21, 80);
   }
 
   if (save && round_rooms && !load)
@@ -159,13 +159,7 @@ int main(int argc, char *argv[])
   print_dungeon(dungeon, wall, hall, floor, '@');
   print_distances_non_tunneling(dungeon, wall, hall, floor);
   print_distances_tunneling(dungeon, wall, hall, floor);
-  int r;
-  for (r = 0; r < 21; r++)
-  {
-    free(dungeon->tiles[r]);
-  }
-  free(dungeon->tiles);
-  free(dungeon);
+  dungeon_free(dungeon);
   return 0;
 }
 
@@ -176,21 +170,21 @@ void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC
   {
     for (c = 0; c < 80; c++)
     {
-      tile_t tile = dungeon->tiles[r][c];
-      if (((character_t*)&dungeon->pc)->loc.x == tile.loc.x &&
-	  ((character_t*)&dungeon->pc)->loc.y == tile.loc.y)
+      tile_type tile = dungeon->terrain[r][c];
+      if (((character_t*)&dungeon->pc)->loc.x == c &&
+	  ((character_t*)&dungeon->pc)->loc.y == r)
       {
 	printf("%c", PC);
       }	
-      else if (tile.type == WALL)
+      else if (tile == WALL)
       {
 	printf("%c", wall);
       }
-      else if (tile.type == FLOOR)
+      else if (tile == FLOOR)
       {
         printf("%c", floor);
       }
-      else if (tile.type == HALL)
+      else if (tile == HALL)
       {
         printf("%c", hall);
       }
@@ -206,9 +200,9 @@ void print_types(dungeon_t* dungeon, char wall, char hall, char floor)
   {
     for (c = 0; c < 80; c++)
     {
-      if (dungeon->tiles[r][c].type == WALL)
+      if (dungeon->terrain[r][c] == WALL)
       {
-	if (dungeon->tiles[r][c].hardness < 100)
+	if (dungeon->hardness[r][c] < 100)
 	{
 	  printf("%c", wall);
 	}
@@ -218,11 +212,11 @@ void print_types(dungeon_t* dungeon, char wall, char hall, char floor)
 	  printf("%c", wall);
 	}
       }
-      else if (dungeon->tiles[r][c].type == FLOOR)
+      else if (dungeon->terrain[r][c] == FLOOR)
       {
         printf("%c", floor);
       }
-      else if (dungeon->tiles[r][c].type == HALL)
+      else if (dungeon->terrain[r][c] == HALL)
       {
         printf("%c", hall);
       }
@@ -239,22 +233,22 @@ void print_distances_non_tunneling(dungeon_t* dungeon, char wall, char hall, cha
   {
     for (c = 0; c < 80; c++)
     {
-      tile_t tile = dungeon->tiles[r][c];
-      if (tile.distance_to_pc < sizeof(distance_markers)-1)
+      tile_type tile = dungeon->terrain[r][c];
+      if (dungeon->distance_to_pc[r][c] < sizeof(distance_markers)-1)
       {
-	printf("%c", distance_markers[tile.distance_to_pc]);
+	printf("%c", distance_markers[dungeon->distance_to_pc[r][c]]);
       }
       else
       {
-        if (tile.type == WALL)
+        if (tile == WALL)
 	{
 	  printf("%c", wall);
 	}
-	else if (tile.type == FLOOR)
+	else if (tile == FLOOR)
 	{
 	  printf("%c", floor);
 	}
-	else if (tile.type == HALL)
+	else if (tile == HALL)
 	{
 	  printf("%c", hall);
 	}
@@ -273,22 +267,22 @@ void print_distances_tunneling(dungeon_t* dungeon, char wall, char hall, char fl
   {
     for (c = 0; c < 80; c++)
     {
-      tile_t tile = dungeon->tiles[r][c];
-      if (tile.tunnelling_distance_to_pc < sizeof(distance_markers)-1)
+      tile_type tile = dungeon->terrain[r][c];
+      if (dungeon->tunneling_distance_to_pc[r][c] < sizeof(distance_markers)-1)
       {
-	printf("%c", distance_markers[tile.tunnelling_distance_to_pc]);
+	printf("%c", distance_markers[dungeon->tunneling_distance_to_pc[r][c]]);
       }
       else
       {
-        if (tile.type == WALL)
+        if (tile == WALL)
 	{
 	  printf("%c", wall);
 	}
-	else if (tile.type == FLOOR)
+	else if (tile == FLOOR)
 	{
 	  printf("%c", floor);
 	}
-	else if (tile.type == HALL)
+	else if (tile == HALL)
 	{
 	  printf("%c", hall);
 	}

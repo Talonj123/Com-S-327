@@ -30,3 +30,4 @@ QUEUE_T* CAT2(NAME, _pqueue_decrease_priority_add_ptr)(QUEUE_T* queue, TYPE data
 #endif
 char CAT2(NAME, _pqueue_is_empty)(QUEUE_T* queue);
 void CAT2(NAME, _pqueue_clear)(QUEUE_T* queue);
+void CAT2(NAME, _pqueue_free)(QUEUE_T* queue);

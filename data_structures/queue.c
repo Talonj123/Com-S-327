@@ -74,7 +74,19 @@ void CAT2(NAME, _queue_clear)(QUEUE_T* queue)
   {
     QUEUE_NODE_T* head = queue->head;
     queue->head = head->next;
-free(head);
+    free(head);
   }
   queue->tail = NULL;
+}
+
+void CAT2(NAME, _queue_free)(QUEUE_T* queue)
+{
+  while (queue->head != NULL)
+  {
+    QUEUE_NODE_T* head = queue->head;
+    queue->head = head->next;
+    free(head);
+  }
+  queue->tail = NULL;
+  free(queue);
 }

@@ -6,7 +6,7 @@
 typedef struct tile_dijkstra_t tile_dijkstra_t;
 struct tile_dijkstra_t
 {
-  tile_t* tile;
+  point_t tile;
   int total_cost;
   tile_dijkstra_t* parent;
   int manhattan;
