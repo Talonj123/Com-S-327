@@ -83,7 +83,6 @@ char save_dungeon(const dungeon_t* dungeon, char* name)
     for (i = 0; i < dungeon->num_rooms; i++)
     {
       rectangle_t room = dungeon->rooms[i];
-      printf("Saving room %d\n", i);
       char points[4];
       points[0] = room.x;
       points[1] = room.width;
@@ -157,8 +156,6 @@ dungeon_t* load_dungeon(char* name)
 
       dungeon->rooms[i] = bounds;
 
-      printf("(%d, %d) + (%d, %d)\n", bounds.x, bounds.y, bounds.width, bounds.height);
-
       int r, c;
       for (r = bounds.y; r < bounds.y + bounds.height; r++)
       {
@@ -171,7 +168,11 @@ dungeon_t* load_dungeon(char* name)
 	}	
       }
     }
-    ((character_t*)&dungeon->pc)->loc = rect_center(dungeon->rooms[rand() % dungeon->num_rooms]);
+    dungeon->pc = get_new_pc();
+    point_t pc_loc = rect_center(dungeon->rooms[rand() % dungeon->num_rooms]);
+    ((character_t*)dungeon->pc)->loc = pc_loc;
+    dungeon->characters[pc_loc.y][pc_loc.x] = ((character_t*)dungeon->pc);
+
     fclose(file); 
   }
   free(expanded);

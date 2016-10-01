@@ -1,6 +1,8 @@
 #ifndef _DUNGEONS_H_
 #define _DUNGEONS_H_
 
+typedef struct dungeon dungeon_t;
+
 #include "coordinates.h"
 #include "../characters.h"
 
@@ -19,7 +21,7 @@ typedef enum tile_type
   FLOOR, HALL, WALL
 } tile_type;
 
-typedef struct dungeon_t
+struct dungeon
 {
 hardness_t hardness[DUNGEON_ROWS][DUNGEON_COLS];
 tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
@@ -29,9 +31,9 @@ character_t* characters[DUNGEON_ROWS][DUNGEON_COLS];
 rectangle_t *rooms;
 int num_rooms;
 
-pc_t pc;
+pc_t* pc;
 
-} dungeon_t;
+};
 
 //dungeon_t* get_blank_dungeon(int rows, int cols);
 dungeon_t* dungeon_new();

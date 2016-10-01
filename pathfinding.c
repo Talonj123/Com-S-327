@@ -61,7 +61,7 @@ void visit_tile_non_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cC
 void get_distances_non_tunneling(dungeon_t* dungeon)
 {
   point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_non_tunneling);
-  point_t loc = ((character_t*)&dungeon->pc)->loc;
+  point_t loc = ((character_t*)dungeon->pc)->loc;
   DISTANCE(loc) = 0;
   point_pqueue_enqueue(pqueue, loc);
   while (!point_pqueue_is_empty(pqueue))
@@ -159,7 +159,7 @@ void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost,
 void get_distances_tunneling(dungeon_t* target)
 {
   point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_tunneling);
-  point_t loc = ((character_t*)&target->pc)->loc;
+  point_t loc = ((character_t*)target->pc)->loc;
   TUNNELING(loc) = 0;
   point_pqueue_enqueue(pqueue, loc);
   while (!point_pqueue_is_empty(pqueue))

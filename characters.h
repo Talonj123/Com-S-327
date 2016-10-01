@@ -1,7 +1,11 @@
 #ifndef _CHARACTERS_H_
 # define _CHARACTERS_H_
 
+typedef struct character character_t;
+typedef struct pc pc_t;
+
 #include "dungeon/coordinates.h"
+#include "dungeon/dungeons.h"
 
 #include <stdlib.h>
 
@@ -17,20 +21,20 @@ typedef union monster_attributes
   };
 } monster_attributes_t;
 
-typedef struct character
+struct character
 {
   point_t loc;
   char symbol;
   int speed;
   char alive;
 
-} character_t;
+};
 
-typedef struct pc
+struct pc
 {
   character_t base;
 
-} pc_t;
+};
 
 typedef struct monster
 {
@@ -42,7 +46,9 @@ typedef struct monster
 } monster_t;
 
 
-monster_t  get_new_monster();
-pc_t get_new_pc();
+monster_t* get_new_monster();
+pc_t* get_new_pc();
+
+void add_monsters(dungeon_t* dungeon, int num_monsters);
 
 #endif //_CHARACTERS_H_

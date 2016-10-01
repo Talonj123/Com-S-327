@@ -33,10 +33,12 @@
 #define DISTANCE_AT(point) dungeon->distance_to_pc[point.y][point.x]
 #define TUNNELING dungeon->tunneling_distance_to_pc[r][c]
 #define TUNNELING_AT(point) dungeon->tunneling_distance_to_pc[point.y][point.x]
+#define CHARACTER dungeon->characters[r][c]
+#define CHARACTER_AT(point) dungeon->characters[point.y][point.x]
 
-#define DIJKSTRA_TURN_COST (10)
-#define DIJKSTRA_BASE_MOVE_COST (0)
-#define DIJKSTRA_FLOOR_COST 30
+#define DIJKSTRA_TURN_COST (50)
+#define DIJKSTRA_BASE_MOVE_COST (20)
+#define DIJKSTRA_FLOOR_COST 20
 #define DIJKSTRA_HALL_COST 5
 
 char check_join_domain(dungeon_t* dungeon, point_queue_t* domains, point_t to_check, hardness_t  to_join)
@@ -91,7 +93,7 @@ void soften(dungeon_t* dungeon)
     int r, c;
     for (r = 1; r < DUNGEON_ROWS - 1; r++)
     {
-      for (c = 1; c < DUNGEON_ROWS - 1; c++)
+      for (c = 1; c < DUNGEON_COLS - 1; c++)
       {
 	int total_surrounding = 0;
 	int denominator = 0;
@@ -145,9 +147,9 @@ dungeon_t* get_blank_dungeon()
     for (c = 0; c < DUNGEON_COLS; c++)
     {
       TERRAIN = WALL;
-      HARDNESS = 255;
       DISTANCE = INT_MAX;
       TUNNELING = INT_MAX;
+      CHARACTER = NULL;
       /* Check for edge, if an edge tile, set to max hardness (100% hard, 0% breakable)
            otherwise, use a random value (assumes that RAND_MAX >> MAX_HARDNESS)
       */
@@ -157,7 +159,7 @@ dungeon_t* get_blank_dungeon()
       }
       else
       {
-	if (rand() % 7)
+	if (rand() % 10)
 	{
 	  /* should have a uniform distribution */
 	  HARDNESS = (MIN_HARDNESS + MAX_HARDNESS)/2;
@@ -426,7 +428,11 @@ dungeon_t* dungeon_new()
 	fails = 0;
       }
     }
-    ((character_t*)&dungeon->pc)->loc = rect_center(dungeon->rooms[rand() % rooms_created]);
+    dungeon->pc = get_new_pc();
+    point_t pc_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
+    ((character_t*)dungeon->pc)->loc = pc_loc;
+    CHARACTER_AT(pc_loc) = ((character_t*)dungeon->pc);
+    
     if (rooms_created >= 6)
     {
       break;
@@ -438,8 +444,20 @@ dungeon_t* dungeon_new()
  
  return dungeon;
 }
- void dungeon_free(dungeon_t* dungeon)
- {
-    free(dungeon->rooms);
-    free(dungeon);   
- }
+void dungeon_free(dungeon_t* dungeon)
+{
+  int r, c;
+  for (r = 1; r < DUNGEON_ROWS - 1; r++)
+  {
+    for (c = 1; c < DUNGEON_COLS - 1; c++)
+    {
+      if (CHARACTER != NULL)
+      {
+	free(CHARACTER);
+      }
+    }
+  }
+  
+  free(dungeon->rooms);
+  free(dungeon);
+}

@@ -18,24 +18,32 @@ int main(int argc, char *argv[])
 
   check_make_dir();
 
-  char round_rooms = 0;
   char pretty = 0;
   char load = 0;
   char save = 0;
-  int args_processed = 0;
+  char num_monsters = 5;
+  int args_processed = 1;
   char* load_name = "dungeon.rlg327";
   char free_load_name = 0;
   char* save_name = "dungeon.rlg327";
   char free_save_name = 0;
   while (argc > args_processed)
   {
-    if (!strcmp("--round", argv[args_processed]))
-    {
-      round_rooms = 1;
-    }
-    else if (!strcmp("--pretty", argv[args_processed]))
+    if (!strcmp("--pretty", argv[args_processed]))
     {
       pretty = 1;
+    }
+    else if (!strcmp("--nummon", argv[args_processed]))
+    {
+      if (argc > args_processed + 1)
+      {
+	int new_num = atoi(argv[args_processed + 1]);
+	if (new_num >= 0)
+	{
+	  num_monsters = new_num;
+	}
+	args_processed++;
+      }
     }
     else if (!strcmp("--load", argv[args_processed]))
     {
@@ -125,13 +133,10 @@ int main(int argc, char *argv[])
   }
   else
   {
-    dungeon = dungeon_new(21, 80);
+    dungeon = dungeon_new();
   }
-
-  if (save && round_rooms && !load)
-  {
-    printf("INFO: Saving a dungeon generated with round rooms, distortion is likely (some floor areas may convert to halls)\n");
-  }
+  
+  add_monsters(dungeon, num_monsters);
 
   if (save)
   {
@@ -172,10 +177,9 @@ void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC
     for (c = 0; c < 80; c++)
     {
       tile_type tile = dungeon->terrain[r][c];
-      if (((character_t*)&dungeon->pc)->loc.x == c &&
-	  ((character_t*)&dungeon->pc)->loc.y == r)
+      if (dungeon->characters[r][c] != NULL)
       {
-	printf("%c", PC);
+	printf("%c", dungeon->characters[r][c]->symbol);
       }	
       else if (tile == WALL)
       {
