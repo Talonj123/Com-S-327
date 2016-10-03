@@ -17,9 +17,15 @@ typedef union monster_attributes
     unsigned char intelligent : 1;
     unsigned char telepathic : 1;
     unsigned char tunnelling : 1;
-    unsigned char  erratic : 1;
+    unsigned char erratic : 1;
   };
 } monster_attributes_t;
+
+typedef enum character_type
+{
+    PC, MONSTER
+    
+} character_type;
 
 struct character
 {
@@ -27,6 +33,8 @@ struct character
   char symbol;
   int speed;
   char alive;
+
+  character_type type;
 
 };
 

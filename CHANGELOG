@@ -1,4 +1,8 @@
 # Change Log
+## 2016-10-01
+### Additions
+ - Added monsters to the maps and printing. No behavior/simulation yet.
+
 ## 2016-09-29 and 30
 ### Changes
  - Refactored the dungeon structure to match the descriptions in lecture

@@ -3,12 +3,14 @@
 #include <time.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "dungeon/dungeons.h"
 #include "save.h"
 #include "pathfinding.h"
+#include "gameflow.h"
 
-void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC);
+void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor);
 void print_types(dungeon_t* dungeon, char wall, char hall, char floor);
 void print_distances_non_tunneling(dungeon_t* dungeon, char wall, char hall, char floor);
 void print_distances_tunneling(dungeon_t* dungeon, char wall, char hall, char floor);
@@ -161,15 +163,22 @@ int main(int argc, char *argv[])
     hall = ' ';
     floor = ' ';
   }
-  print_dungeon(dungeon, wall, hall, floor, '@');
+  print_dungeon(dungeon, wall, hall, floor);
   print_distances_non_tunneling(dungeon, wall, hall, floor);
   print_distances_tunneling(dungeon, wall, hall, floor);
+
+  while (((character_t*)dungeon->pc)->alive)
+  {
+    usleep(100000);
+    do_next_event(dungeon);
+    print_dungeon(dungeon, wall, hall, floor);
+  }
 
   dungeon_free(dungeon);
   return 0;
 }
 
-void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor, char PC)
+void print_dungeon(dungeon_t* dungeon, char wall, char hall, char floor)
 {
   int r, c;
   for (r = 0; r < 21; r++)

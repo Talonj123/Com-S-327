@@ -7,30 +7,11 @@ folder_name = $(name).assignment-$(assignment_num)
 gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon
 
 #Top-level targets
-dungeons: dungeons.a main.c save.a pathfinding.o characters.o
+dungeons: dungeons.a main.c save.a pathfinding.o characters.o gameflow.a
 	gcc $(gcc_flags) -c -o main.o main.c 
-	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o
+	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a
 
 all: dungeons
-
-characters.o : characters.c characters.h
-	gcc $(gcc_flags) -c -o $@ characters.c
-
-pathfinding.o: pathfinding.c
-	gcc $(gcc_flags) -c -o $@ pathfinding.c
-
-save.o: save.c
-	gcc $(gcc_flags) -c -o $@ save.c
-
-save.a: save.o room_list.o room_list.o
-	ld -r -o $@ save.o room_list.o
-#tile_queue.o
-
-pqueue_test: int_pqueue.o priority_queue.h pqueue_test.c
-	gcc $(gcc_flags) pqueue_test.c int_pqueue.o -o $@
-
-list_test: int_list.o list_test.c
-	gcc $(gcc_flags) list_test.c int_list.o -o $@
 
 examples: clean $(main_target)
 	@echo ----------SAVED------------- >> examples
@@ -60,44 +41,50 @@ clean: clean_general
 	cd data_structures; make clean
 
 #dependancies
-dungeons.a: dungeon/*.c dungeon/*.c path_pqueue.o point_list.o point_queue.o point_pqueue.o
+dungeons.a: dungeon/*.c dungeon/*.h path_pqueue.o point_list.o point_queue.o point_pqueue.o
 	cd dungeon; make  dungeons.a;
 	ld -r -o $@ dungeon/dungeons.a path_pqueue.o point_list.o point_queue.o point_pqueue.o
 
-%_list.o: data_structures/list.c
-	cd data_structures; make list TYPE=$*; cp $*_list.o ../$*_list.o
-	cp data_structures/$*_list.o $*_list.o
+event_pqueue.o: data_structures/priority_queue.c data_structures/priority_queue.h gameflow.h
+	cd data_structures; make pqueue TYPE=event_t NAME=event HEADER=gameflow.h
+	cp data_structures/event_pqueue.o event_pqueue.o
 
-%_queue.o: data_structures/queue.c¥
-	cd data_structures; make queue TYPE=$*; cp $*_queue.o ../$*_queue.o
-	cp data_structures/$*_queue.o $*_queue.o
-
-%_pqueue.o: data_structures/priority_queue.c
-	cd data_structures; make pqueue TYPE=$*; cp $*_pqueue.o ../$*_pqueue.o
-	cp data_structures/$*_pqueue.o $*_pqueue.o
-
-point_queue.o:
+point_queue.o: data_structures/queue.c data_structures/queue.h dungeon/coordinates.h
 	cd data_structures; make queue TYPE=point_t NAME=point HEADER=dungeon/dungeons.h;
 	cp data_structures/point_queue.o point_queue.o
 
-point_pqueue.o:
+point_pqueue.o: data_structures/priority_queue.c data_structures/priority_queue.h dungeon/coordinates.h
 	cd data_structures; make pqueue TYPE=point_t NAME=point HEADER=dungeon/dungeons.h;
 	cp data_structures/point_pqueue.o point_pqueue.o
 
-point_list.o:
+point_list.o: data_structures/list.h data_structures/list.c dungeon/coordinates.h
 	cd data_structures; make list TYPE=point_t NAME=point HEADER=dungeon/dungeons.h;
 	cp data_structures/point_list.o point_list.o
 
-room_list.o:
+room_list.o: data_structures/list.h data_structures/list.c dungeon/coordinates.h
 	cd data_structures; make list TYPE=rectangle_t NAME=room HEADER=dungeon/coordinates.h;
 	cp data_structures/room_list.o room_list.o
 
-path_pqueue.o: dungeon/dungeons_private.h data_structures/priority_queue.c
+path_pqueue.o: data_structures/priority_queue.c data_structures/priority_queue.h dungeon/dungeons_private.h
 	cd data_structures; make pqueue TYPE=tile_dijkstra_t* NAME=path HEADER=dungeon/dungeons_private.h IS_POINTER=1; cp path_pqueue.o ../path_pqueue.o
 
-monster_list.o:
+monster_list.o: data_structures/list.h data_structures/list.c characters.h
 	cd data_structures; make  list TYPE=monster_t* NAME=monster HEADER=characters.h;
 	cp data_structures/monster_list.o monster_list.o
+
+characters.o : characters.c characters.h
+	gcc $(gcc_flags) -c -o $@ characters.c
+
+pathfinding.o: pathfinding.c
+	gcc $(gcc_flags) -c -o $@ pathfinding.c
+
+save.a: save.c room_list.o
+	gcc $(gcc_flags) -c -o save.o save.c
+	ld -r -o $@ save.o room_list.o
+
+gameflow.a: gameflow.c gameflow.h event_pqueue.o
+	gcc $(gcc_flags) -c -o gameflow.o gameflow.c
+	ld -r -o $@ gameflow.o event_pqueue.o
 
 #Common targets
 clean_general:
