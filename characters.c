@@ -1,9 +1,9 @@
- 
 #include "characters.h"
 #include "gameflow.h"
 #include "pathfinding.h"
 
 #include <limits.h>
+#include <unistd.h>
 #include <stdio.h>
 
 #define ERRATIC (0x08)
@@ -48,12 +48,6 @@ monster_t* get_new_monster()
 
 pc_t* get_new_pc()
 {
-  static int pcs = 0;
-  printf("new pc created\n");
-  if (++pcs > 1)
-  {
-    while (1);
-  }
   pc_t* pc = malloc(sizeof(pc_t));
   ((character_t*)pc)->symbol = '@';
   ((character_t*)pc)->speed = 10;
@@ -89,9 +83,17 @@ void move_character(dungeon_t* dungeon, character_t* character, point_t nloc, ch
   {
     character_t* character = dungeon->characters[nloc.y][nloc.x];
     character->alive = 0;
+        dungeon->characters[nloc.y][nloc.x] = NULL;
+    /* let the event handler clean it up */
   }
-  dungeon->characters[loc.y][loc.x] = NULL;
+  /* error check */
+  if (dungeon->characters[nloc.y][nloc.x] != NULL)
+  {
+    printf("ERROR: character not killed\n");
+    while (1);
+  }
   dungeon->characters[nloc.y][nloc.x] = character;
+  dungeon->characters[loc.y][loc.x] = NULL;
   character->loc = nloc;
 }
 
@@ -163,14 +165,6 @@ void move_toward_pc_path(dungeon_t* dungeon, monster_t* monster)
 
 void move_toward_pc_line(dungeon_t* dungeon, monster_t* monster)
 {
-  if (monster->last_pc_known.x < 1 ||
-      monster->last_pc_known.x >= DUNGEON_COLS - 1 ||
-      monster->last_pc_known.y < 1 ||
-      monster->last_pc_known.y >= DUNGEON_ROWS - 1)
-  {
-    /* edge tile, or PC not set */
-    return;
-  }
   point_t pcloc = monster->last_pc_known;
   point_t monloc = ((character_t*)monster)->loc;
   point_t delta = {pcloc.x - monloc.x, pcloc.y - monloc.y};
@@ -215,11 +209,15 @@ void move_toward_pc_line(dungeon_t* dungeon, monster_t* monster)
 void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
   monster_t* monster = ((monster_event_t*)this_event)->monster;
+  point_t original_monster_loc = ((character_t*)monster)->loc;
   
+
   if (!((character_t*)monster)->alive)
   {
     /* delete monster and  don't re-add event */
+    /* removed from character map when killed */
     free(monster);
+    free(this_event);
     return;
   }
 
@@ -252,15 +250,36 @@ void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
     {
       move_toward_pc_path(dungeon, monster);
     }
-    else
+    else if (monster->last_pc_known.x > 0 ||
+	     monster->last_pc_known.x < DUNGEON_COLS - 1 ||
+	     monster->last_pc_known.y > 0 ||
+	     monster->last_pc_known.y < DUNGEON_ROWS - 1)
     {
       move_toward_pc_line(dungeon, monster);
+    }
+    else
+    {
+      monster_try_move_random(dungeon, monster);
     }
   }
   
 
   this_event->time += 100/((character_t*)monster)->speed;
   add_event((event_t*)this_event);
+
+  print_dungeon(dungeon);
+
+  /* error checking */
+  point_t new_monster_loc = ((character_t*)monster)->loc;
+  if ((abs(original_monster_loc.x - new_monster_loc.x) > 1) ||
+      (abs(original_monster_loc.y - new_monster_loc.y) > 1))
+  {
+    printf("The monster moved too far: (%d, %d)->(%d, %d)",
+	   original_monster_loc.x, original_monster_loc.y,
+	   new_monster_loc.x, new_monster_loc.y);
+    char c;
+    scanf("%c\n", &c);
+  }
 }
 
 void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
@@ -274,8 +293,11 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
   point_t loc = ((character_t*)pc)->loc;
   point_t nloc = {loc.x - 1, loc.y - 1};
   move_character(dungeon, (character_t*)pc, nloc, 1);
+  print_dungeon(dungeon);
   this_event->time += 100/((character_t*)pc)->speed;
   add_event(this_event);
+
+  usleep(300000);
 }
 
 void add_monsters(dungeon_t* dungeon, int num_monsters)

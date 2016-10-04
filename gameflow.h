@@ -13,5 +13,12 @@ typedef struct event
 
 void do_next_event(dungeon_t* dungeon);
 void add_event(event_t* event);
+void clear_events();
+
+
+void print_dungeon(dungeon_t* dungeon);
+void print_types(dungeon_t* dungeon);
+void print_distances_non_tunneling(dungeon_t* dungeon);
+void print_distances_tunneling(dungeon_t* dungeon);
 
 #endif // _GAMEFLOW_H_
