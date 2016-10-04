@@ -166,8 +166,10 @@ int main(int argc, char *argv[])
   print_dungeon(dungeon, wall, hall, floor);
   print_distances_non_tunneling(dungeon, wall, hall, floor);
   print_distances_tunneling(dungeon, wall, hall, floor);
-
-  while (((character_t*)dungeon->pc)->alive)
+  
+  pc_t* pc = dungeon->pc;
+  add_pc_event(pc);
+  while (((character_t*)pc)->alive)
   {
     usleep(100000);
     do_next_event(dungeon);

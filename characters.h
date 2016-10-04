@@ -59,5 +59,6 @@ monster_t* get_new_monster();
 pc_t* get_new_pc();
 
 void add_monsters(dungeon_t* dungeon, int num_monsters);
+void add_pc_event(pc_t* pc);
 
 #endif //_CHARACTERS_H_

@@ -18,12 +18,18 @@ typedef struct monster_event
 
 } monster_event_t;
 
+typedef struct pc_event
+{
+  event_t base;
+  pc_t* pc;
+
+} pc_event_t;
+
 monster_t* get_new_monster()
 {
   monster_t* monster = malloc(sizeof(monster_t));
   char attributes = rand()%16;
   int speed = rand()%15 + 5;
-  attributes = 15;
   monster->attributes.raw = attributes;
   if (attributes < 0xA)
   {
@@ -42,6 +48,12 @@ monster_t* get_new_monster()
 
 pc_t* get_new_pc()
 {
+  static int pcs = 0;
+  printf("new pc created\n");
+  if (++pcs > 1)
+  {
+    while (1);
+  }
   pc_t* pc = malloc(sizeof(pc_t));
   ((character_t*)pc)->symbol = '@';
   ((character_t*)pc)->speed = 10;
@@ -253,7 +265,17 @@ void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
 
 void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
-
+  pc_t* pc = ((pc_event_t*)this_event)->pc;
+  if (!((character_t*)pc)->alive)
+  {
+    free(this_event);
+    return;
+  }
+  point_t loc = ((character_t*)pc)->loc;
+  point_t nloc = {loc.x - 1, loc.y - 1};
+  move_character(dungeon, (character_t*)pc, nloc, 1);
+  this_event->time += 100/((character_t*)pc)->speed;
+  add_event(this_event);
 }
 
 void add_monsters(dungeon_t* dungeon, int num_monsters)
@@ -281,4 +303,13 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
       }
     }
   }
+}
+
+void add_pc_event(pc_t* pc)
+{
+  pc_event_t* pc_event = malloc(sizeof(pc_event_t));
+  ((event_t*)pc_event)->time = ((character_t*)pc)->speed;
+  ((event_t*)pc_event)->run = pc_take_turn;
+  pc_event->pc = pc;
+  add_event((event_t*)pc_event);
 }

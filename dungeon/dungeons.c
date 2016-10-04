@@ -457,7 +457,7 @@ void dungeon_free(dungeon_t* dungeon)
       }
     }
   }
-  
+  free(dungeon->pc);
   free(dungeon->rooms);
   free(dungeon);
 }
