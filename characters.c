@@ -1,6 +1,15 @@
  
 #include "characters.h"
 #include "gameflow.h"
+#include "pathfinding.h"
+
+#include <limits.h>
+#include <stdio.h>
+
+#define ERRATIC (0x08)
+#define TUNNELING (0x04)
+#define TELEPATHIC (0x02)
+#define INTELLIGENT (0x01)
 
 typedef struct monster_event
 {
@@ -13,8 +22,8 @@ monster_t* get_new_monster()
 {
   monster_t* monster = malloc(sizeof(monster_t));
   char attributes = rand()%16;
-  attributes = 0x08;
   int speed = rand()%15 + 5;
+  attributes = 15;
   monster->attributes.raw = attributes;
   if (attributes < 0xA)
   {
@@ -23,66 +32,228 @@ monster_t* get_new_monster()
   {
     ((character_t*)monster)->symbol = 'A' + attributes - 0xA;
   }
+  ((character_t*)monster)->type = MONSTER;
   ((character_t*)monster)->speed = speed;
   ((character_t*)monster)->alive = 1;
+  monster->last_pc_known.x = -1;
+  monster->last_pc_known.y = -1;
   return monster;
 }
 
 pc_t* get_new_pc()
 {
-  pc_t* pc = malloc(sizeof(pc_t));;
+  pc_t* pc = malloc(sizeof(pc_t));
   ((character_t*)pc)->symbol = '@';
   ((character_t*)pc)->speed = 10;
+  ((character_t*)pc)->type = PC;
   ((character_t*)pc)->alive = 1;
   return pc;
+}
+
+void move_character(dungeon_t* dungeon, character_t* character, point_t nloc, char tunneling)
+{
+  if (dungeon->terrain[nloc.y][nloc.x] == WALL)
+  {
+    if (!tunneling || (dungeon->hardness[nloc.y][nloc.x] == MAX_HARDNESS))
+    {
+      /* can't move there */
+      return;
+    }
+    if (dungeon->hardness[nloc.y][nloc.x] > 85)
+    {
+      dungeon->hardness[nloc.y][nloc.x]-= 85;
+      get_distances(dungeon);
+      return;
+    }
+    else
+    {
+      dungeon->hardness[nloc.y][nloc.x] = 0;
+      dungeon->terrain[nloc.y][nloc.x] = HALL;
+      get_distances(dungeon);
+    }
+  }
+  point_t loc = character->loc;
+  if (dungeon->characters[nloc.y][nloc.x] != NULL)
+  {
+    character_t* character = dungeon->characters[nloc.y][nloc.x];
+    character->alive = 0;
+  }
+  dungeon->characters[loc.y][loc.x] = NULL;
+  dungeon->characters[nloc.y][nloc.x] = character;
+  character->loc = nloc;
+}
+
+char monster_try_move_random(dungeon_t* dungeon, monster_t* monster)
+{
+  int dx = (rand() % 3) - 1;
+  int dy = (rand() % 3) - 1;
+  if (dx == 0 && dy == 0)
+  {
+    return 0;
+  }
+  point_t loc = ((character_t*)monster)->loc;
+  point_t nloc = {loc.x + dx, loc.y + dy};
+  if (dungeon->terrain[nloc.y][nloc.x] == WALL && !monster->attributes.tunneling)
+  {
+    return 0;
+  }
+  move_character(dungeon, (character_t*)monster, nloc, monster->attributes.tunneling);
+  return 1;
+}
+
+char has_los_to_pc(dungeon_t* dungeon, monster_t* monster)
+{
+  int room_num;
+  for (room_num = 0; room_num < dungeon->num_rooms; room_num++)
+  {
+    if (rect_contains_point(dungeon->rooms[room_num], ((character_t*)dungeon->pc)->loc)
+	&& rect_contains_point(dungeon->rooms[room_num], ((character_t*)monster)->loc))
+    {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+void move_toward_pc_path(dungeon_t* dungeon, monster_t* monster)
+{
+  int (*distance_map)[DUNGEON_ROWS][DUNGEON_COLS] = NULL;
+  if (monster->attributes.tunneling && monster->attributes.intelligent)
+  {
+    /* use tunneling map */
+    distance_map = &dungeon->tunneling_distance_to_pc;
+  } else if (monster->attributes.intelligent)
+  {
+    /* use non-tunneling map */
+    distance_map = &dungeon->distance_to_pc;
+  }
+  /* move according to distance map */
+  point_t loc = ((character_t*)monster)->loc;
+  int lowest_score = INT_MAX;
+  point_t nloc = loc;
+  int dx, dy;
+  for (dx = -1; dx <= 1; dx++)
+  {
+    for (dy = -1; dy <= 1; dy++)
+    {
+      int score = (*distance_map)[loc.y + dy][loc.x + dx];
+      if (score < lowest_score)
+      {
+	lowest_score = score;
+	nloc.x = loc.x + dx;
+	nloc.y = loc.y + dy;
+      }
+    }
+  }
+  move_character(dungeon, (character_t*)monster, nloc, monster->attributes.tunneling);
+}
+
+void move_toward_pc_line(dungeon_t* dungeon, monster_t* monster)
+{
+  if (monster->last_pc_known.x < 1 ||
+      monster->last_pc_known.x >= DUNGEON_COLS - 1 ||
+      monster->last_pc_known.y < 1 ||
+      monster->last_pc_known.y >= DUNGEON_ROWS - 1)
+  {
+    /* edge tile, or PC not set */
+    return;
+  }
+  point_t pcloc = monster->last_pc_known;
+  point_t monloc = ((character_t*)monster)->loc;
+  point_t delta = {pcloc.x - monloc.x, pcloc.y - monloc.y};
+  
+  int dx = 0, dy = 0;
+  if (delta.x > 0)
+  {
+    dx = 1;
+  } else if (delta.x < 0)
+  {
+    dx = -1;
+  }
+  if (delta.y > 0)
+  {
+    dy = 1;
+  } else if (delta.y < 0)
+  {
+    dy = -1;
+  }
+  point_t nloc = {monloc.x + dx, monloc.y + dy};
+  if (!monster->attributes.tunneling)
+  {
+    if (dungeon->terrain[nloc.y][nloc.x] == WALL)
+    {
+      if (dungeon->terrain[monloc.y][monloc.x + dx] != WALL)
+      {
+	nloc.y = monloc.y;
+      }
+      else if (dungeon->terrain[monloc.y + dy][monloc.x] != WALL)
+      {
+	nloc.x = monloc.x;
+      }
+      else
+      {
+	return;
+      }
+    }
+  }
+  move_character(dungeon, (character_t*)monster, nloc, monster->attributes.tunneling);
 }
 
 void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
   monster_t* monster = ((monster_event_t*)this_event)->monster;
-
-  if ((monster->attributes.erratic) && (rand() % 2))
+  
+  if (!((character_t*)monster)->alive)
   {
-    while (1)
+    /* delete monster and  don't re-add event */
+    free(monster);
+    return;
+  }
+
+  if (monster->attributes.telepathic)
+  {
+    monster->last_pc_known = ((character_t*)dungeon->pc)->loc;
+  }
+  else if (has_los_to_pc(dungeon, monster))
+  {
+    monster->last_pc_known = ((character_t*)dungeon->pc)->loc;
+  }
+  else if (!monster->attributes.intelligent)
+  {
+    monster->last_pc_known.x = -1;
+    monster->last_pc_known.y = -1;
+  }
+
+  if (monster->attributes.erratic && (rand() % 2))
+  {
+    int tries = 0;
+    while (tries++ < 5)
     {
-      int dx = (rand() % 3) - 1;
-      int dy = (rand() % 3) - 1;
-      if (dx == 0 && dy == 0)
-      {
-	continue;
-      }
-      point_t loc = ((character_t*)monster)->loc;
-      point_t nloc = {loc.x + dx, loc.y + dy};
-      if (!(dungeon->terrain[nloc.y][nloc.x] == FLOOR ||
-	   dungeon->terrain[nloc.y][nloc.x] == HALL))
-      {
-	continue;
-      }
-      if (dungeon->characters[nloc.y][nloc.x] != NULL)
-      {
-	character_t* character = dungeon->characters[nloc.y][nloc.x];
-	if (character->type == PC)
-	{
-	  character->alive = 0;
-	}
-	else
-	{
-	  continue;
-	}
-      }
-      dungeon->characters[loc.y][loc.x] = NULL;
-      dungeon->characters[nloc.y][nloc.x] = (character_t*)monster;
-      ((character_t*)monster)->loc = nloc;
-      break;
+      if (monster_try_move_random(dungeon, monster))
+	break;
     }
   } else
   {
-    /* other attributes */
+    /* other cases */
+    if (monster->attributes.telepathic && monster->attributes.intelligent)
+    {
+      move_toward_pc_path(dungeon, monster);
+    }
+    else
+    {
+      move_toward_pc_line(dungeon, monster);
+    }
   }
   
 
   this_event->time += 100/((character_t*)monster)->speed;
   add_event((event_t*)this_event);
+}
+
+void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
+{
+
 }
 
 void add_monsters(dungeon_t* dungeon, int num_monsters)

@@ -16,14 +16,14 @@ typedef union monster_attributes
   {
     unsigned char intelligent : 1;
     unsigned char telepathic : 1;
-    unsigned char tunnelling : 1;
+    unsigned char tunneling : 1;
     unsigned char erratic : 1;
   };
 } monster_attributes_t;
 
 typedef enum character_type
 {
-    PC, MONSTER
+  PC, MONSTER
     
 } character_type;
 
@@ -49,7 +49,8 @@ typedef struct monster
   character_t base;
   monster_attributes_t attributes;
 
-  point_t last_pc_seen;
+  /* last los  position for non-telepathic and current position for telepathic */
+  point_t last_pc_known;
 
 } monster_t;
 
