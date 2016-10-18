@@ -137,6 +137,7 @@ dungeon_t* get_blank_dungeon()
   /* freed by client */
   dungeon_t* dungeon = malloc(sizeof(dungeon_t));
   dungeon->num_rooms = 0;
+  dungeon->num_characters = 0;
   dungeon->rooms = NULL;
 
   point_queue_t* domains = new_point_queue();
@@ -429,6 +430,7 @@ dungeon_t* dungeon_new()
       }
     }
     dungeon->pc = get_new_pc();
+    dungeon->num_characters++;
     point_t pc_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
     ((character_t*)dungeon->pc)->loc = pc_loc;
     CHARACTER_AT(pc_loc) = ((character_t*)dungeon->pc);
@@ -457,7 +459,6 @@ void dungeon_free(dungeon_t* dungeon)
       }
     }
   }
-  free(dungeon->pc);
   free(dungeon->rooms);
   free(dungeon);
 }

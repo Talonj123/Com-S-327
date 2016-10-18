@@ -1,4 +1,12 @@
 # Change Log
+## 2016-10-05
+# Changes
+ - Bug fixes in character movement
+
+## 2016-10-04
+## Additions
+ - PC AI
+ 
 ## 2016-10-01
 ### Additions
  - Added monsters to the maps and printing. No behavior/simulation yet.

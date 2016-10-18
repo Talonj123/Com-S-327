@@ -23,16 +23,17 @@ typedef enum tile_type
 
 struct dungeon
 {
-hardness_t hardness[DUNGEON_ROWS][DUNGEON_COLS];
-tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
-int distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
-int tunneling_distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
-character_t* characters[DUNGEON_ROWS][DUNGEON_COLS];
-rectangle_t *rooms;
-int num_rooms;
-
-pc_t* pc;
-
+  hardness_t hardness[DUNGEON_ROWS][DUNGEON_COLS];
+  tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
+  int distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
+  int tunneling_distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
+  character_t* characters[DUNGEON_ROWS][DUNGEON_COLS];
+  rectangle_t *rooms;
+  int num_rooms;
+  int num_characters;
+  
+  pc_t* pc;
+  
 };
 
 //dungeon_t* get_blank_dungeon(int rows, int cols);

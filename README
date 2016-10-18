@@ -1,6 +1,5 @@
-By default, the dungeon is generated as per assignment 1.01.
+The dungeon is generated as per Assignment 1.01.
 The --load and --save flags act as defined in Assignment 1.02.
+Pathfinding distance maps are generated as defined b7 Assignment 1.03.
 
-After the dungeon is obtained (loaded/generated), the PC is put in the center of a random room (may cause issues in non-rectangular dungeons).
-Two distance maps are generated for tunnelling and non-tunnelling monsters using dijkstra's (edge weights of 1 for non-tunnelling map). These maps are printed out to the console.
-My priority queue is not fancy, it has linear add and reduce priority operations, which seems to be suficent thus far. The reason I haven't switched to Dr. Scheaffer's heap is that I like my generic setup, and don't want to migrate everything to a new interface.
+Monsters are added (5 by default), and the game proceeds as a dicreet event simulation. Monsters move as defined by their attributes (initialized randomly). Definitions for the event queue interaction is defined in the gameflow.h file. The events and functions for the specific characters are defined in characters.c. All partial data structures are extended with the necessarry data via inheritance, which is why all the monsters get cast to pointer to character_t in several places. There were some major changes to the dungeon data structure (and the referencing code). All characters and thier events are allocated dynamically to accomodate their various sizes. All event resources (including the characters themselves) are released by the cleanup function associated with each event.

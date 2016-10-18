@@ -1,42 +1,30 @@
 #variables
-assignment_num ?= 1.03
+assignment_num ?= 1.04
 name = talbert_james
 main_target = dungeons
 folder_name = $(name).assignment-$(assignment_num)
 
-gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon
+gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon -pg -lncurses	
 
 #Top-level targets
 dungeons: dungeons.a main.c save.a pathfinding.o characters.o gameflow.a
-	gcc $(gcc_flags) -c -o main.o main.c 
+	gcc $(gcc_flags) -c -o main.o main.c
 	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a
 
 all: dungeons
 
 examples: clean $(main_target)
 	@echo ----------SAVED------------- >> examples
-	./$(main_target) --save t1 >> examples
-	sleep 1
-	./$(main_target) --save t2 >> examples
-	sleep 1
-	./$(main_target) --save t3 >> examples
-	sleep 1
-	./$(main_target) --save t4 >> examples
-	@echo ---------LOADED------------- >> examples
-	sleep 1
-	./$(main_target) --load t1 >> examples
-	sleep 1
-	./$(main_target) --load t2 >> examples
-	sleep 1
-	./$(main_target) --load t3 >> examples
-	sleep 1
-	./$(main_target) --load t4 >> examples
-	less examples
+	./$(main_target) >> example1
+	./$(main_target) >> example2
+	less example1
+	less example2
 
 clean: clean_general
 	rm -f *.map
 	rm -f *_test
-	rm -f examples
+	rm -f example*
+	rm -f *.out
 	cd dungeon; make clean
 	cd data_structures; make clean
 
@@ -46,7 +34,7 @@ dungeons.a: dungeon/*.c dungeon/*.h path_pqueue.o point_list.o point_queue.o poi
 	ld -r -o $@ dungeon/dungeons.a path_pqueue.o point_list.o point_queue.o point_pqueue.o
 
 event_pqueue.o: data_structures/priority_queue.c data_structures/priority_queue.h gameflow.h
-	cd data_structures; make pqueue TYPE=event_t NAME=event HEADER=gameflow.h
+	cd data_structures; make pqueue TYPE=event_t* NAME=event HEADER=gameflow.h
 	cp data_structures/event_pqueue.o event_pqueue.o
 
 point_queue.o: data_structures/queue.c data_structures/queue.h dungeon/coordinates.h

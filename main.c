@@ -9,11 +9,14 @@
 #include "save.h"
 #include "pathfinding.h"
 #include "gameflow.h"
+#include <ncurses.h>
+
 
 int main(int argc, char *argv[])
 {
 
   check_make_dir();
+  init_io();
 
   char load = 0;
   char save = 0;
@@ -145,17 +148,31 @@ int main(int argc, char *argv[])
   get_distances(dungeon);
 
   print_dungeon(dungeon);
-  print_distances_non_tunneling(dungeon);
-  print_distances_tunneling(dungeon);
   
   pc_t* pc = dungeon->pc;
   add_pc_event(pc);
-  while (((character_t*)pc)->alive)
+  while (((character_t*)pc)->alive && dungeon->num_characters > 1)
   {
     do_next_event(dungeon);
   }
   print_dungeon(dungeon);
-  clear_events();
+
+  if (((character_t*)dungeon->pc)->alive)
+  {
+    mvprintw(22, 0, "--------------------------------------------------------------------------------");
+    mvprintw(23, 0, "The PC caught them all!\n\n");
+  }
+  else
+  {
+    mvprintw(22, 0, "--------------------------------------------------------------------------------");
+    mvprintw(23, 0, "The PC was pwned by a grue.\n\n");
+  }
+
+  clear_events(dungeon);
   dungeon_free(dungeon);
+
+  getch();
+  
+  end_io();
   return 0;
 }

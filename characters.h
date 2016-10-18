@@ -41,6 +41,7 @@ struct character
 struct pc
 {
   character_t base;
+  character_t* target;
 
 };
 
