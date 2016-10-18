@@ -87,7 +87,7 @@ void print_dungeon(dungeon_t* dungeon)
       {
         ch = '#';
       }
-      mvaddch(r+1, c, ch);
+      mvaddch(r, c, ch);
     }
   }
   refresh();

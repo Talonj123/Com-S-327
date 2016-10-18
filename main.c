@@ -151,21 +151,28 @@ int main(int argc, char *argv[])
   
   pc_t* pc = dungeon->pc;
   add_pc_event(pc);
-  while (((character_t*)pc)->alive && dungeon->num_characters > 1)
+  game_state.running = 1;
+  game_state.quitted = 0;
+  while (game_state.running)
   {
     do_next_event(dungeon);
   }
   print_dungeon(dungeon);
 
-  if (((character_t*)dungeon->pc)->alive)
+  if (game_state.quitted)
   {
     mvprintw(22, 0, "--------------------------------------------------------------------------------");
-    mvprintw(23, 0, "The PC caught them all!\n\n");
+    mvprintw(23, 0, "You quit, that's no fun!");
+  }
+  else if (((character_t*)dungeon->pc)->alive)
+  {
+    mvprintw(22, 0, "--------------------------------------------------------------------------------");
+    mvprintw(23, 0, "The PC caught them all!");
   }
   else
   {
     mvprintw(22, 0, "--------------------------------------------------------------------------------");
-    mvprintw(23, 0, "The PC was pwned by a grue.\n\n");
+    mvprintw(23, 0, "The PC was pwned by a grue.");
   }
 
   clear_events(dungeon);

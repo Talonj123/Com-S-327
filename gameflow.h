@@ -3,6 +3,14 @@
 
 #include "dungeon/dungeons.h"
 
+typedef struct game_state
+{
+  char running : 1;
+  char quitted : 1;
+} game_state_t;
+
+extern game_state_t game_state;
+
 /* all events must have these members first */
 typedef struct event
 {

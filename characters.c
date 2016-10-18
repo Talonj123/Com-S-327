@@ -13,6 +13,8 @@
 #define TELEPATHIC (0x02)
 #define INTELLIGENT (0x01)
 
+game_state_t game_state;
+
 typedef struct monster_event
 {
   event_t base;
@@ -322,17 +324,24 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
   pc_t* pc = ((pc_event_t*)this_event)->pc;
   if (!((character_t*)pc)->alive)
   {
+    game_state.running = 0;
     free(this_event);
     return;
   }
+
+  print_dungeon(dungeon);
   
   //point_t loc = ((character_t*)pc)->loc;
 
-  int ch = getch();
+  int ch;
+
+GETCHAR_LBL:
+  ch = getch();
   switch (ch)
   {
   default:
     mvprintw(0, 0, "Unknown Key: %#o  ", ch);
+    goto GETCHAR_LBL;
     break;
 
     /* numpad.7 (up+left) */
@@ -342,49 +351,62 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
     break;
 
     /* numpad.8 (up) */
-    case 070:
+  case 070:
     /* try move up */
     pc_try_move(dungeon, pc, 0, -1);
     break;
 
     /* numpad.9 (up+right) */
-    case 071:
+  case 071:
     /* try move up+right */
     pc_try_move(dungeon, pc, 1, -1);
     break;
 
     /* numpad.1 (down+left) */
-    case 061:
+  case 061:
     /* try move down+left */
     pc_try_move(dungeon, pc, -1, 1);
     break;
 
     /* numpad.2 (down) */
-    case 062:
+  case 062:
     /* try move down */
     pc_try_move(dungeon, pc, 0, 1);
     break;
 
     /* numpad.3 (down+right) */
-    case 063:
+  case 063:
     /* try move down+left */
     pc_try_move(dungeon, pc, 1, 1);
     break;
 
     /* numpad.4 (left) */
-    case 064:
+  case 064:
     /* try move left */
     pc_try_move(dungeon, pc, -1, 0);
     break;
 
     /* numpad.4 (left) */
-    case 066:
+  case 066:
     /* try move left */
     pc_try_move(dungeon, pc, 1, 0);
     break;
+
+  case 'q':
+    game_state.quitted = 1;
+    game_state.running = 0;
+    break;
+
+  case 065:
+    /* numpad.5 */
+    break;
   }
 
-  print_dungeon(dungeon);
+  if (dungeon->num_characters <= 1)
+  {
+    game_state.running = 0;
+  }
+
   this_event->time += 100/((character_t*)pc)->speed;
   add_event(this_event);
 }

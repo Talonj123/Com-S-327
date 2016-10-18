@@ -41,6 +41,8 @@
 #define DIJKSTRA_FLOOR_COST 20
 #define DIJKSTRA_HALL_COST 5
 
+#define NUM_ROOMS 10
+
 char check_join_domain(dungeon_t* dungeon, point_queue_t* domains, point_t to_check, hardness_t  to_join)
 {
   if (to_check.x < 0 || to_check.x >= DUNGEON_COLS || to_check.y < 0 || to_check.y >= DUNGEON_ROWS)
@@ -364,7 +366,7 @@ dungeon_t* dungeon_new()
     //TODO:
     dungeon = get_blank_dungeon();
     /* reduce for sparser dungeons */
-    int max_fails = 50;
+    int max_fails = 500;
     int fails = 0;
 
     int i;
@@ -374,13 +376,13 @@ dungeon_t* dungeon_new()
     int min_width = 8;
     int min_height = 8;
 
-    int max_width = DUNGEON_COLS/8;
-    int max_height = DUNGEON_ROWS/8;
+    int max_width = DUNGEON_COLS/6;
+    int max_height = DUNGEON_ROWS/6;
     int rooms_created = 0;
-    dungeon->num_rooms = 8;
+    dungeon->num_rooms = NUM_ROOMS;
     dungeon->rooms = malloc(sizeof(rectangle_t)*8);
 
-    while (rooms_created < 8)
+    while (rooms_created < NUM_ROOMS)
     {
       rectangle_t bounds;
       bounds.x = outer_bounds.x + (rand()%(outer_bounds.width-min_width));
