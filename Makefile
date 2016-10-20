@@ -4,7 +4,7 @@ name = talbert_james
 main_target = dungeons
 folder_name = $(name).assignment-$(assignment_num)
 
-gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon -pg -lncurses	
+gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon -lncurses	
 
 #Top-level targets
 dungeons: dungeons.a main.c save.a pathfinding.o characters.o gameflow.a

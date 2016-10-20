@@ -130,8 +130,6 @@ int main(int argc, char *argv[])
   {
     dungeon = dungeon_new();
   }
-  
-  add_monsters(dungeon, num_monsters);
 
   if (save)
   {
@@ -145,16 +143,26 @@ int main(int argc, char *argv[])
       free(save_name);
     }
   }
-  get_distances(dungeon);
 
   print_dungeon(dungeon);
   
   pc_t* pc = dungeon->pc;
   add_pc_event(pc);
+  add_monsters(dungeon, num_monsters);
   game_state.running = 1;
   game_state.quitted = 0;
   while (game_state.running)
   {
+    if (game_state.reload)
+    {
+      clear_events(dungeon);
+      dungeon_free(dungeon);
+      dungeon = dungeon_new();
+      pc = dungeon->pc;
+      add_pc_event(pc);
+      add_monsters(dungeon, num_monsters);
+      game_state.reload = 0;
+    }
     do_next_event(dungeon);
   }
   print_dungeon(dungeon);
@@ -163,11 +171,6 @@ int main(int argc, char *argv[])
   {
     mvprintw(22, 0, "--------------------------------------------------------------------------------");
     mvprintw(23, 0, "You quit, that's no fun!");
-  }
-  else if (((character_t*)dungeon->pc)->alive)
-  {
-    mvprintw(22, 0, "--------------------------------------------------------------------------------");
-    mvprintw(23, 0, "The PC caught them all!");
   }
   else
   {

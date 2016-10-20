@@ -55,6 +55,7 @@ void init_io()
   raw();
   keypad(stdscr, TRUE);
   noecho();
+  set_escdelay(100);
 }
 
 void end_io()
@@ -86,6 +87,14 @@ void print_dungeon(dungeon_t* dungeon)
       else if (tile == HALL)
       {
         ch = '#';
+      }
+      else if (tile == UP_STAIR)
+      {
+        ch = '<';
+      }
+      else if (tile == DOWN_STAIR)
+      {
+        ch = '>';
       }
       mvaddch(r, c, ch);
     }

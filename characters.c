@@ -5,13 +5,17 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include <string.h>
+#include <math.h>
 #include <ncurses.h>
 
 #define ERRATIC (0x08)
 #define TUNNELING (0x04)
 #define TELEPATHIC (0x02)
 #define INTELLIGENT (0x01)
+
+#define MAX_STRLEN 29
+#define str(s) #s
 
 game_state_t game_state;
 
@@ -319,11 +323,119 @@ char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy)
   return 1;
 }
 
+void monster_list_interface(dungeon_t* dungeon)
+{
+  int num_monsters = dungeon->num_characters-1;
+  character_t** character_list = malloc(num_monsters*sizeof(character_t*));
+  int r, c, i = 0;
+  for (r = 0; r < DUNGEON_ROWS; r++)
+  {
+    for (c = 0; c < DUNGEON_COLS; c++)
+    {
+      character_t* character = dungeon->characters[r][c];
+      if (character != NULL && character->type == MONSTER)
+      {
+	character_list[i++] = character;
+      }
+    }
+  }
+  point_t loc = ((character_t*)dungeon->pc)->loc;
+  char **lines = malloc(sizeof(char*)*num_monsters);
+  for (i = 0; i < dungeon->num_characters-1; i++)
+  {
+    lines[i] = malloc(sizeof(char)*35);
+    character_t* monster = character_list[i];
+    point_t mloc = monster->loc;
+    point_t diff = { mloc.x - loc.x, mloc.y - loc.y };
+    sprintf(lines[i], "| A %c, %2d %5s and %2d %4s |",
+	    monster->symbol,
+	    abs(diff.y),
+	    (diff.y >= 0) ? "south" : "north",
+	    abs(diff.x),
+	    (diff.x >= 0) ? "east" : "west");
+  }
+  free(character_list);
+  int offset = 0;
+  const int max_display = 10;
+  while (1)
+  {
+    //mvprintw((21-max_display)/2 - 1, (80-MAX_STRLEN)/2, "                             ");
+    //mvprintw((21-max_display)/2 + max_display, (80-MAX_STRLEN)/2, "                             ");
+
+    if (offset == 0)
+    {
+      mvprintw((21-max_display)/2 - 1, (80-29)/2, "-----------------------------");
+    }
+    else
+    {
+      mvprintw((21-max_display)/2 - 1, (80-29)/2, "--------------^--------------");
+    }
+
+    if (offset + max_display < num_monsters)
+    {
+      mvprintw((21-max_display)/2 + max_display, (80-29)/2, "--------------,--------------");
+    }
+    else
+    {
+      mvprintw((21-max_display)/2 + max_display, (80-29)/2, "-----------------------------");
+    }
+
+    int upper = max_display;
+    if (num_monsters - offset < max_display)
+    {
+      upper = num_monsters - offset;
+    }
+    for (i = 0; i < upper; i++)
+    {
+      char* str = lines[i+offset];
+      mvprintw(i+(21-max_display)/2, (80-strlen(str))/2, str);
+    }
+    for (i = upper; i < max_display; i++)
+    {
+      mvprintw(i+(21-max_display)/2, (80-29)/2, "|                           |");
+    }
+    refresh();
+    int key = getch();
+    if (key == 0402)
+    {
+      offset += 1;
+      if (offset + max_display > num_monsters)
+      {
+	offset = num_monsters - max_display;
+	if (offset < 0)
+	{
+	  offset = 0;
+	}
+      }
+    }
+    else if (key == 0403)
+    {
+      offset -= 1;
+      if (offset < 0)
+      {
+	offset = 0;
+      }
+    }
+    else if (key == 033)
+    {
+      break;
+    }
+  }
+  for (i = 0; i < num_monsters; i++)
+  {
+    free(lines[i]);
+  }
+  free(lines);
+  
+  print_dungeon(dungeon);
+}
+
 void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
   pc_t* pc = ((pc_event_t*)this_event)->pc;
   if (!((character_t*)pc)->alive)
   {
+    free(pc);
     game_state.running = 0;
     free(this_event);
     return;
@@ -331,7 +443,7 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 
   print_dungeon(dungeon);
   
-  //point_t loc = ((character_t*)pc)->loc;
+  point_t loc = ((character_t*)pc)->loc;
 
   int ch;
 
@@ -400,11 +512,33 @@ GETCHAR_LBL:
   case 065:
     /* numpad.5 */
     break;
-  }
 
-  if (dungeon->num_characters <= 1)
-  {
-    game_state.running = 0;
+  case 'm':
+    monster_list_interface(dungeon);
+    goto GETCHAR_LBL;
+    break;
+
+  case '<':
+    if (dungeon->terrain[loc.y][loc.x] == UP_STAIR)
+    {
+      game_state.reload = 1;
+    }
+    else
+    {
+      goto GETCHAR_LBL;
+    }
+    break;
+
+  case '>':
+    if (dungeon->terrain[loc.y][loc.x] == DOWN_STAIR)
+    {
+      game_state.reload = 1;
+    }
+    else
+    {
+      goto GETCHAR_LBL;
+    }
+    break;
   }
 
   this_event->time += 100/((character_t*)pc)->speed;
@@ -442,7 +576,7 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
     {
       int r = rand() % DUNGEON_ROWS;
       int c = rand() % DUNGEON_COLS;
-      if (dungeon->terrain[r][c] == FLOOR &&
+      if (dungeon->terrain[r][c] != WALL &&
 	  dungeon->characters[r][c] == NULL)
       {
 	((character_t*)monster)->loc.x = c;
@@ -463,7 +597,7 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
 void add_pc_event(pc_t* pc)
 {
   pc_event_t* pc_event = malloc(sizeof(pc_event_t));
-  ((event_t*)pc_event)->time = ((character_t*)pc)->speed;
+  ((event_t*)pc_event)->time = 0;
   ((event_t*)pc_event)->run = pc_take_turn;
   ((event_t*)pc_event)->cleanup = pc_cleanup;
   pc_event->pc = pc;

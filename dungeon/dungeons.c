@@ -7,6 +7,7 @@
 #include "dungeons_private.h"
 #include "coordinates.h"
 #include "characters.h"
+#include "pathfinding.h"
 
 #define TYPE point_t
 #define NAME point
@@ -302,6 +303,12 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
     case WALL:
       new_cost += HARDNESS_AT(data->tile);
       break;
+    case UP_STAIR:
+      new_cost += HARDNESS_AT(data->tile);
+      break;
+    case DOWN_STAIR:
+      new_cost += HARDNESS_AT(data->tile);
+      break;
     }
     if (loc.x > 0)
     {
@@ -380,7 +387,7 @@ dungeon_t* dungeon_new()
     int max_height = DUNGEON_ROWS/6;
     int rooms_created = 0;
     dungeon->num_rooms = NUM_ROOMS;
-    dungeon->rooms = malloc(sizeof(rectangle_t)*8);
+    dungeon->rooms = malloc(sizeof(rectangle_t)*NUM_ROOMS);
 
     while (rooms_created < NUM_ROOMS)
     {
@@ -433,11 +440,26 @@ dungeon_t* dungeon_new()
     }
     dungeon->pc = get_new_pc();
     dungeon->num_characters++;
+
     point_t pc_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
     ((character_t*)dungeon->pc)->loc = pc_loc;
     CHARACTER_AT(pc_loc) = ((character_t*)dungeon->pc);
+
     
-    if (rooms_created >= 6)
+    get_distances(dungeon);
+
+    point_t up_stairs_loc = pc_loc;
+    point_t down_stairs_loc;
+
+    do
+    {
+      down_stairs_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
+    } while (up_stairs_loc.x == down_stairs_loc.x && down_stairs_loc.y == down_stairs_loc.y);
+
+    TERRAIN_AT(up_stairs_loc) = UP_STAIR;
+    TERRAIN_AT(down_stairs_loc) = DOWN_STAIR;
+    
+    if (rooms_created >= NUM_ROOMS)
     {
       break;
     }
@@ -445,6 +467,7 @@ dungeon_t* dungeon_new()
   }
 
   link_rooms(dungeon);
+  get_distances(dungeon);
  
  return dungeon;
 }

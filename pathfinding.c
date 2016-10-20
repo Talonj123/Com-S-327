@@ -1,6 +1,5 @@
 #include <limits.h>
 #include <stdlib.h>
-
 #include <stdio.h>
 
 #include "dungeon/dungeons.h"
@@ -28,8 +27,8 @@ void get_distances(dungeon_t* target)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
     {
-      target->distance_to_pc[r][c] = INT_MAX;
-      target->tunneling_distance_to_pc[r][c] = INT_MAX;
+      target->distance_to_pc[r][c] = INT_MAX-5;
+      target->tunneling_distance_to_pc[r][c] = INT_MAX-5;
     }
   }
   get_distances_non_tunneling(target);
@@ -62,6 +61,7 @@ void get_distances_non_tunneling(dungeon_t* dungeon)
 {
   point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_non_tunneling);
   point_t loc = ((character_t*)dungeon->pc)->loc;
+
   DISTANCE(loc) = 0;
   point_pqueue_enqueue(pqueue, loc);
   while (!point_pqueue_is_empty(pqueue))

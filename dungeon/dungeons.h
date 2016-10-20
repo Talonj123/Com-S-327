@@ -18,7 +18,7 @@ typedef unsigned char hardness_t;
 
 typedef enum tile_type
 {
-  FLOOR, HALL, WALL
+  FLOOR, HALL, WALL, UP_STAIR, DOWN_STAIR
 } tile_type;
 
 struct dungeon
