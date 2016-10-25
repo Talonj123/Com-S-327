@@ -9,6 +9,7 @@
 #include "save.h"
 #include "pathfinding.h"
 #include "gameflow.h"
+#include "io.h"
 #include <ncurses.h>
 
 

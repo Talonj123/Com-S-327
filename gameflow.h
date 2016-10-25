@@ -25,9 +25,4 @@ void do_next_event(dungeon_t* dungeon);
 void add_event(event_t* event);
 void clear_events(dungeon_t* dungeon);
 
-void init_io();
-void end_io();
-
-void print_dungeon(dungeon_t* dungeon);
-
 #endif // _GAMEFLOW_H_

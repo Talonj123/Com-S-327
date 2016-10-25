@@ -61,5 +61,6 @@ pc_t* get_new_pc();
 
 void add_monsters(dungeon_t* dungeon, int num_monsters);
 void add_pc_event(pc_t* pc);
+char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy);
 
 #endif //_CHARACTERS_H_

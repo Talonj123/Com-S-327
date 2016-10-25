@@ -7,9 +7,9 @@ folder_name = $(name).assignment-$(assignment_num)
 gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon -lncurses	
 
 #Top-level targets
-dungeons: dungeons.a main.c save.a pathfinding.o characters.o gameflow.a
+dungeons: dungeons.a main.c save.a pathfinding.o characters.o gameflow.a io.o
 	gcc $(gcc_flags) -c -o main.o main.c
-	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a
+	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a io.o
 
 all: dungeons
 
@@ -65,6 +65,9 @@ characters.o : characters.c characters.h
 
 pathfinding.o: pathfinding.c
 	gcc $(gcc_flags) -c -o $@ pathfinding.c
+
+io.o: io.c
+	gcc $(gcc_flags) -c -o $@ io.c
 
 save.a: save.c room_list.o
 	gcc $(gcc_flags) -c -o save.o save.c
