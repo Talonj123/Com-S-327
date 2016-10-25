@@ -14,9 +14,6 @@
 #define TELEPATHIC (0x02)
 #define INTELLIGENT (0x01)
 
-#define MAX_STRLEN 29
-#define str(s) #s
-
 game_state_t game_state;
 
 typedef struct monster_event
@@ -458,58 +455,67 @@ GETCHAR_LBL:
 
     /* numpad.7 (up+left) */
   case 067:
+  case 'y':
     /* try move up+left */
     pc_try_move(dungeon, pc, -1, -1);
     break;
 
     /* numpad.8 (up) */
   case 070:
+  case 'k':
     /* try move up */
     pc_try_move(dungeon, pc, 0, -1);
     break;
 
     /* numpad.9 (up+right) */
   case 071:
+  case 'u':
     /* try move up+right */
     pc_try_move(dungeon, pc, 1, -1);
     break;
 
     /* numpad.1 (down+left) */
   case 061:
+  case 'b':
     /* try move down+left */
     pc_try_move(dungeon, pc, -1, 1);
     break;
 
     /* numpad.2 (down) */
   case 062:
+  case 'j':
     /* try move down */
     pc_try_move(dungeon, pc, 0, 1);
     break;
 
     /* numpad.3 (down+right) */
   case 063:
+  case 'n':
     /* try move down+left */
     pc_try_move(dungeon, pc, 1, 1);
     break;
 
     /* numpad.4 (left) */
   case 064:
+  case 'h':
     /* try move left */
     pc_try_move(dungeon, pc, -1, 0);
     break;
 
-    /* numpad.4 (left) */
+    /* numpad.g (right) */
   case 066:
+  case 'l':
     /* try move left */
     pc_try_move(dungeon, pc, 1, 0);
     break;
 
-  case 'q':
+  case 'Q':
     game_state.quitted = 1;
     game_state.running = 0;
     break;
 
   case 065:
+  case ' ':
     /* numpad.5 */
     break;
 

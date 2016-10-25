@@ -173,6 +173,17 @@ dungeon_t* load_dungeon(char* name)
     ((character_t*)dungeon->pc)->loc = pc_loc;
     dungeon->characters[pc_loc.y][pc_loc.x] = ((character_t*)dungeon->pc);
 
+    point_t up_stairs_loc = pc_loc;
+    point_t down_stairs_loc;
+
+    do
+    {
+      down_stairs_loc = rect_center(dungeon->rooms[rand() % dungeon->num_rooms]);
+    } while (up_stairs_loc.x == down_stairs_loc.x && down_stairs_loc.y == down_stairs_loc.y);
+    
+    dungeon->terrain[up_stairs_loc.y][up_stairs_loc.x] = UP_STAIR;
+    dungeon->terrain[down_stairs_loc.y][down_stairs_loc.x] = DOWN_STAIR;
+
     fclose(file); 
   }
   free(expanded);

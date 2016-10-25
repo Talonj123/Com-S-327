@@ -1,4 +1,16 @@
 # Change Log
+## 2016-10-19
+# Additions
+ - Stairs
+
+## 2016-10-18
+# Additions
+ - Basic PC movement (keypad)
+ 
+## 2016-10-17
+# Changes
+ - Changed to NCurses IO
+
 ## 2016-10-05
 # Changes
  - Bug fixes in character movement

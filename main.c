@@ -16,7 +16,6 @@ int main(int argc, char *argv[])
 {
 
   check_make_dir();
-  init_io();
 
   char load = 0;
   char save = 0;
@@ -143,6 +142,7 @@ int main(int argc, char *argv[])
       free(save_name);
     }
   }
+  init_io();
 
   print_dungeon(dungeon);
   

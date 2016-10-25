@@ -1,5 +1,6 @@
 The dungeon is generated as per Assignment 1.01.
 The --load and --save flags act as defined in Assignment 1.02.
-Pathfinding distance maps are generated as defined b7 Assignment 1.03.
+Pathfinding distance maps are generated as defined by Assignment 1.03.
+The Monsters move according to Assignment 1.04.
 
-Monsters are added (5 by default), and the game proceeds as a dicreet event simulation. Monsters move as defined by their attributes (initialized randomly). Definitions for the event queue interaction is defined in the gameflow.h file. The events and functions for the specific characters are defined in characters.c. All partial data structures are extended with the necessarry data via inheritance, which is why all the monsters get cast to pointer to character_t in several places. There were some major changes to the dungeon data structure (and the referencing code). All characters and thier events are allocated dynamically to accomodate their various sizes. All event resources (including the characters themselves) are released by the cleanup function associated with each event.
+IO is done with NCurses (unless a dungeon load fails), see the assignment document for key mappings. The PC cannot tunnel, however it always spawns on top of an upwards stair (to let the PC escape in case multiple monsters spawn next to it). All PC control/interface code is in characters.c, in the pc_take_turn() function (or a function called by it. Comminucation with the main game loop is done with a game state bitfield (to request quits/reloads).
