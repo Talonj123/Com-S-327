@@ -109,7 +109,6 @@ int main(int argc, char *argv[])
 
   srand(time(0));
   dungeon_t* dungeon;
-
   if (load)
   {
     dungeon = load_dungeon(load_name);
@@ -143,11 +142,15 @@ int main(int argc, char *argv[])
       free(save_name);
     }
   }
+
+  pc_t* pc = get_new_pc();
+  set_pc(dungeon, pc);
+  clear_pc_memory(pc);
+
   init_io();
 
   print_dungeon(dungeon);
   
-  pc_t* pc = dungeon->pc;
   add_pc_event(pc);
   add_monsters(dungeon, num_monsters);
   game_state.running = 1;
@@ -159,7 +162,8 @@ int main(int argc, char *argv[])
       clear_events(dungeon);
       dungeon_free(dungeon);
       dungeon = dungeon_new();
-      pc = dungeon->pc;
+      set_pc(dungeon, pc);
+      clear_pc_memory(pc);
       add_pc_event(pc);
       add_monsters(dungeon, num_monsters);
       game_state.reload = 0;
@@ -181,7 +185,7 @@ int main(int argc, char *argv[])
 
   clear_events(dungeon);
   dungeon_free(dungeon);
-
+  free_pc(pc);
   getch();
   
   end_io();

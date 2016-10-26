@@ -142,6 +142,7 @@ dungeon_t* get_blank_dungeon()
   dungeon->num_rooms = 0;
   dungeon->num_characters = 0;
   dungeon->rooms = NULL;
+  dungeon->pc = NULL;
 
   point_queue_t* domains = new_point_queue();
 
@@ -438,17 +439,8 @@ dungeon_t* dungeon_new()
 	fails = 0;
       }
     }
-    dungeon->pc = get_new_pc();
-    dungeon->num_characters++;
 
-    point_t pc_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
-    ((character_t*)dungeon->pc)->loc = pc_loc;
-    CHARACTER_AT(pc_loc) = ((character_t*)dungeon->pc);
-
-    
-    get_distances(dungeon);
-
-    point_t up_stairs_loc = pc_loc;
+    point_t up_stairs_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
     point_t down_stairs_loc;
 
     do
@@ -467,7 +459,6 @@ dungeon_t* dungeon_new()
   }
 
   link_rooms(dungeon);
-  get_distances(dungeon);
  
  return dungeon;
 }
@@ -478,12 +469,44 @@ void dungeon_free(dungeon_t* dungeon)
   {
     for (c = 1; c < DUNGEON_COLS - 1; c++)
     {
-      if (CHARACTER != NULL)
+      if (CHARACTER != NULL && get_character_type(CHARACTER) != PC)
       {
-	free(CHARACTER);
+	free_character(CHARACTER);
       }
     }
   }
   free(dungeon->rooms);
   free(dungeon);
+}
+
+void set_pc(dungeon_t* dungeon, pc_t* pc)
+{
+  if (dungeon->pc != NULL)
+  {
+    dungeon->num_characters--;
+    free_pc(dungeon->pc);
+  }  
+
+  dungeon->pc = pc;
+  dungeon->num_characters++;
+
+  int r, c;
+  point_t pc_loc;
+  for (r = 0; r < DUNGEON_ROWS; r++)
+  {
+    for (c = 0; c < DUNGEON_COLS; c++)
+    {
+      if (dungeon->terrain[r][c] == UP_STAIR)
+      {
+	pc_loc.x = c;
+	pc_loc.y = r;
+	goto BREAK;
+      }
+    }
+  }
+ BREAK:
+  set_character_loc((character_t*)pc, pc_loc);
+  CHARACTER_AT(pc_loc) = ((character_t*)dungeon->pc);
+
+  get_distances(dungeon);
 }

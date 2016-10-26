@@ -13,29 +13,30 @@
 void monster_list_interface(dungeon_t* dungeon)
 {
   int num_monsters = dungeon->num_characters-1;
-  character_t** character_list = malloc(num_monsters*sizeof(character_t*));
+  character_t** character_list = calloc(num_monsters, sizeof(character_t*));
   int r, c, i = 0;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
     {
       character_t* character = dungeon->characters[r][c];
-      if (character != NULL && character->type == MONSTER)
+      if (character != NULL && get_character_type(character) == MONSTER)
       {
 	character_list[i++] = character;
+	get_character_loc(character);
       }
     }
   }
-  point_t loc = ((character_t*)dungeon->pc)->loc;
+  point_t loc = get_character_loc((character_t*)dungeon->pc);
   char **lines = malloc(sizeof(char*)*num_monsters);
-  for (i = 0; i < dungeon->num_characters-1; i++)
+  for (i = 0; i < num_monsters; i++)
   {
     lines[i] = malloc(sizeof(char)*35);
     character_t* monster = character_list[i];
-    point_t mloc = monster->loc;
+    point_t mloc = get_character_loc(monster);
     point_t diff = { mloc.x - loc.x, mloc.y - loc.y };
     sprintf(lines[i], "| A %c, %2d %5s and %2d %4s |",
-	    monster->symbol,
+	    get_character_symbol(monster),
 	    abs(diff.y),
 	    (diff.y >= 0) ? "south" : "north",
 	    abs(diff.x),
@@ -121,10 +122,24 @@ void pc_turn_interface(dungeon_t* dungeon, pc_t* pc)
 {
  print_dungeon(dungeon);
   
-  point_t loc = ((character_t*)pc)->loc;
+ point_t loc = get_character_loc((character_t*)pc);
 
+  /*
+  int r, c, num = 0;
+  for (r = 0; r < DUNGEON_ROWS; r++)
+  {
+    for (c = 0; c < DUNGEON_COLS; c++)
+    {
+      if (dungeon->characters[r][c] != NULL)
+      {
+	num++;
+      }
+    }
+  }
+  mvprintw(22, 0, "num_characters: %d", dungeon->num_characters);
+  mvprintw(23, 0, "     (counted): %d", num);
+  */
   int ch;
-
 GETCHAR_LBL:
   ch = getch();
   switch (ch)
@@ -231,16 +246,19 @@ GETCHAR_LBL:
 
 void print_dungeon(dungeon_t* dungeon)
 {
+  PlayerMemory memory = get_pc_memory(dungeon->pc);
+  point_t loc = get_character_loc((character_t*)dungeon->pc);
   int r, c;
   for (r = 0; r < 21; r++)
   {
     for (c = 0; c < 80; c++)
     {
-      tile_type tile = dungeon->terrain[r][c];
+      tile_type tile = memory.terrain[r][c];
+      //tile_type tile = dungeon->terrain[r][c];
       char ch = ' ';
-      if (dungeon->characters[r][c] != NULL)
+      if (dungeon->characters[r][c] != NULL && (abs(loc.x - c) <= 3) && (abs(loc.y - r) <= 3))
       {
-        ch = dungeon->characters[r][c]->symbol;
+        ch = get_character_symbol(dungeon->characters[r][c]);
       }
       else if (tile == WALL)
       {

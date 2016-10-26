@@ -9,7 +9,7 @@ gcc_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon -lncurses
 #Top-level targets
 dungeons: dungeons.a main.c save.a pathfinding.o characters.o gameflow.a io.o
 	gcc $(gcc_flags) -c -o main.o main.c
-	gcc $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a io.o
+	g++ $(gcc_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a io.o
 
 all: dungeons
 
@@ -60,10 +60,10 @@ monster_list.o: data_structures/list.h data_structures/list.c characters.h
 	cd data_structures; make  list TYPE=monster_t* NAME=monster HEADER=characters.h;
 	cp data_structures/monster_list.o monster_list.o
 
-characters.o : characters.c characters.h
-	gcc $(gcc_flags) -c -o $@ characters.c
+characters.o : characters.cpp characters.h
+	g++ $(gcc_flags) -c -o $@ characters.cpp
 
-pathfinding.o: pathfinding.c
+pathfinding.o: pathfinding.c characters.h
 	gcc $(gcc_flags) -c -o $@ pathfinding.c
 
 io.o: io.c

@@ -1,66 +1,100 @@
 #ifndef _CHARACTERS_H_
 # define _CHARACTERS_H_
 
-typedef struct character character_t;
-typedef struct pc pc_t;
+#ifdef __cplusplus
 
+extern "C" {
+
+#endif
 #include "dungeon/coordinates.h"
+
+  typedef enum {
+    PC, MONSTER
+  } CharacterType;
+
+  typedef union monster_attributes
+  {
+    unsigned char raw : 4;
+    struct
+    {
+      unsigned char intelligent : 1;
+      unsigned char telepathic : 1;
+      unsigned char tunneling : 1;
+      unsigned char erratic : 1;
+    };
+  } monster_attributes_t;
+
+#include "dungeon/dungeon_independant.h"
+
+  typedef struct
+  {
+    tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
+  } PlayerMemory;
+  
+#ifdef __cplusplus
+}
+class character_t
+{
+ public:
+  char symbol;
+  point_t loc;
+  int speed;
+  bool alive;
+  CharacterType type;
+};
+
+class pc_t : public character_t
+{
+ public:
+  character_t* target;
+  PlayerMemory memory;
+
+  void UpdateMemory(dungeon_t* dungeon);
+};
+
+class monster_t : public character_t
+{
+public:
+  monster_attributes_t attributes;
+  point_t last_known_pc;
+};
+
+
+typedef class character_t Character;
+typedef class monster_t Monster;
+typedef class pc_t Player;
+
+extern "C" {
+
+#else
+  typedef struct Character character_t;
+  typedef struct Monster monster_t;
+  typedef struct Player pc_t;
+#endif //__cplusplus
+  
+#include <stdlib.h>
 #include "dungeon/dungeons.h"
 
-#include <stdlib.h>
+  monster_t* get_new_monster();
+  pc_t* get_new_pc();
 
-typedef union monster_attributes
-{
-  unsigned char raw : 4;
-  struct
-  {
-    unsigned char intelligent : 1;
-    unsigned char telepathic : 1;
-    unsigned char tunneling : 1;
-    unsigned char erratic : 1;
-  };
-} monster_attributes_t;
+  void add_monsters(dungeon_t* dungeon, int num_monsters);
+  void add_pc_event(pc_t* pc);
+  char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy);
 
-typedef enum character_type
-{
-  PC, MONSTER
-    
-} character_type;
+  void set_character_loc(character_t* pc, point_t point);
 
-struct character
-{
-  point_t loc;
-  char symbol;
-  int speed;
-  char alive;
+  point_t get_character_loc(character_t* pc);
+  char get_character_symbol(character_t* character);
+  CharacterType get_character_type(character_t* character);
+  PlayerMemory get_pc_memory(pc_t* pc);
+  void clear_pc_memory(pc_t* pc);
 
-  character_type type;
+  void free_pc(pc_t* pc);
+  void free_character(character_t* pc);
 
-};
-
-struct pc
-{
-  character_t base;
-  character_t* target;
-
-};
-
-typedef struct monster
-{
-  character_t base;
-  monster_attributes_t attributes;
-
-  /* last los  position for non-telepathic and current position for telepathic */
-  point_t last_pc_known;
-
-} monster_t;
-
-
-monster_t* get_new_monster();
-pc_t* get_new_pc();
-
-void add_monsters(dungeon_t* dungeon, int num_monsters);
-void add_pc_event(pc_t* pc);
-char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy);
+#ifdef __cplusplus
+}
+#endif //__cplusplus
 
 #endif //_CHARACTERS_H_

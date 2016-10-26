@@ -1,25 +1,11 @@
 #ifndef _DUNGEONS_H_
 #define _DUNGEONS_H_
 
-typedef struct dungeon dungeon_t;
-
 #include "coordinates.h"
 #include "../characters.h"
 
-#define FLOOR_HARDNESS 0
-#define HALL_HARDNESS 0
-#define MAX_HARDNESS (hardness_t)255
-#define MIN_HARDNESS (hardness_t)10
-
-#define DUNGEON_ROWS 21
-#define DUNGEON_COLS 80
 
 typedef unsigned char hardness_t;
-
-typedef enum tile_type
-{
-  FLOOR, HALL, WALL, UP_STAIR, DOWN_STAIR
-} tile_type;
 
 struct dungeon
 {
@@ -39,5 +25,6 @@ struct dungeon
 //dungeon_t* get_blank_dungeon(int rows, int cols);
 dungeon_t* dungeon_new();
 void dungeon_free(dungeon_t* dungeon);
+void set_pc(dungeon_t* dungeon, pc_t* pc);
 
 #endif //_DUNGEONS_H_
