@@ -2,5 +2,12 @@ The dungeon is generated as per Assignment 1.01.
 The --load and --save flags act as defined in Assignment 1.02.
 Pathfinding distance maps are generated as defined by Assignment 1.03.
 The Monsters move according to Assignment 1.04.
+IO is handled according to Assignment 1.05.
 
-IO is done with NCurses (unless a dungeon load fails), see the assignment document for key mappings. The PC cannot tunnel, however it always spawns on top of an upwards stair (to let the PC escape in case multiple monsters spawn next to it). All PC control/interface code is in characters.c, in the pc_take_turn() function (or a function called by it. Comminucation with the main game loop is done with a game state bitfield (to request quits/reloads).
+The characters are implemented as C++ classes, with the motion of NPC's handled by C++ source code. There is a C interface provided in the header file (characters.h) alongside the C++ interface. In the C++ code, the prefered character class aliases are Character, Player, and Monster. In the C interface, the names are character_t, pc_t, and monster_t. The C code handles the characters as opaque pointers (incomplete types) and the C++ code exports a C interface to get/set the needed members.
+
+For the interface elements, see characters.h. For the C++ implementations, see characters.cpp.
+
+The Fog of War implementation involves a memory struct for the Player (might become a class at some point) at the moment, the Player only remembers some terrain, however, it could theoretically remember other things later. The ownership of the memory allocated to the Player has been moved to the game as a whole, so the PC gets preserved accross levels (dungeons). Management of that memory has been moved to main.c. This required the addition of a set_pc(.) method in dungeon/dungeons.c. Each turn, the Player's memory is updated from the dungeon via the Player::UpdateMemory(.) method (characters.cpp).
+
+Some of the header management got hairy with circular dependancies with other files, so I made a dungeon_independant.h header that holds dungeon typedef and #defines that do not depend on other files at all. These can be included without the circular dependancy headache (needed for tile_types enum and sungeon size defines that the Player must use for it's memory).

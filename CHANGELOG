@@ -1,4 +1,14 @@
 # Change Log
+## 2016-10-26
+# Changes
+ - Changed Player (pc_t) memory ownership
+ - Fixed all the stuff that broke (lots of memory errors)
+ 
+## 2016-10-25
+# Changes
+ - Changed characters.c to characters.cpp
+ - changed characters.h to have extern "C" {} blocks and class definitions
+
 ## 2016-10-19
 # Additions
  - Stairs

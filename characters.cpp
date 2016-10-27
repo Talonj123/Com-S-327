@@ -23,30 +23,30 @@ game_state_t game_state;
 typedef struct monster_event
 {
   event_t base;
-  monster_t* monster;
+  Monster* monster;
 
 } monster_event_t;
 
 typedef struct pc_event
 {
   event_t base;
-  pc_t* pc;
+  Player* pc;
 
 } pc_event_t;
 
-monster_t* get_new_monster()
+Monster* get_new_monster()
 {
-  monster_t* monster = new Monster();
+  Monster* monster = new Monster();
   char attributes = rand()%16;
   int speed = rand()%15 + 5;
-  attributes = ERRATIC | TUNNELING;
+  //attributes = ERRATIC | TUNNELING;
   monster->attributes.raw = attributes;
   if (attributes < 0xA)
   {
-    ((character_t*)monster)->symbol = '0' + attributes;
+    monster->symbol = '0' + attributes;
   } else
   {
-    ((character_t*)monster)->symbol = 'A' + attributes - 0xA;
+    monster->symbol = 'A' + attributes - 0xA;
   }
   monster->type = MONSTER;
   monster->speed = speed;
@@ -58,7 +58,7 @@ monster_t* get_new_monster()
 
 pc_t* get_new_pc()
 {
-  pc_t* pc = new Player();
+  Player* pc = new Player();
   pc->symbol = '@';
   pc->speed = 10;
   pc->type = PC;
@@ -75,7 +75,7 @@ pc_t* get_new_pc()
   return pc;
 }
 
-void move_character(dungeon_t* dungeon, character_t* character, point_t nloc, char tunneling)
+void move_character(dungeon_t* dungeon, Character* character, point_t nloc, char tunneling)
 {
   if (dungeon->terrain[nloc.y][nloc.x] == WALL)
   {
@@ -104,10 +104,10 @@ void move_character(dungeon_t* dungeon, character_t* character, point_t nloc, ch
   }
   point_t loc = character->loc;
 
-  //character_t* other = NULL;
+  //Character* other = NULL;
   if (dungeon->characters[nloc.y][nloc.x] != NULL)
   {
-    character_t* other = dungeon->characters[nloc.y][nloc.x];
+    Character* other = dungeon->characters[nloc.y][nloc.x];
     other->alive = 0;
     /* let the event handler clean it up */
     dungeon->num_characters--;
@@ -117,7 +117,7 @@ void move_character(dungeon_t* dungeon, character_t* character, point_t nloc, ch
   character->loc = nloc;
 }
 
-char character_try_move_random(dungeon_t* dungeon, character_t* character, char tunneling)
+char character_try_move_random(dungeon_t* dungeon, Character* character, char tunneling)
 {
   int dx = (rand() % 3) - 1;
   int dy = (rand() % 3) - 1;
@@ -137,14 +137,14 @@ char character_try_move_random(dungeon_t* dungeon, character_t* character, char 
   return 1;
 }
 
-char has_los_to_pc(dungeon_t* dungeon, monster_t* monster)
+char has_los_to_pc(dungeon_t* dungeon, Monster* monster)
 {
   int room_num;
   for (room_num = 0; room_num < dungeon->num_rooms; room_num++)
   {
     rectangle_t room = dungeon->rooms[room_num];
-    if (rect_contains_point(room, ((character_t*)dungeon->pc)->loc)
-	&& rect_contains_point(room, ((character_t*)monster)->loc))
+    if (rect_contains_point(room, dungeon->pc->loc)
+	&& rect_contains_point(room, monster->loc))
     {
       return 1;
     }
@@ -153,7 +153,7 @@ char has_los_to_pc(dungeon_t* dungeon, monster_t* monster)
 }
 
 
-void move_toward_pc_path(dungeon_t* dungeon, monster_t* monster)
+void move_toward_pc_path(dungeon_t* dungeon, Monster* monster)
 {
   int (*distance_map)[DUNGEON_ROWS][DUNGEON_COLS] = NULL;
   if (monster->attributes.tunneling && monster->attributes.intelligent)
@@ -166,7 +166,7 @@ void move_toward_pc_path(dungeon_t* dungeon, monster_t* monster)
     distance_map = &dungeon->distance_to_pc;
   }
   /* move according to distance map */
-  point_t loc = ((character_t*)monster)->loc;
+  point_t loc = monster->loc;
   int lowest_score = INT_MAX;
   point_t nloc = loc;
   int dx, dy;
@@ -183,10 +183,10 @@ void move_toward_pc_path(dungeon_t* dungeon, monster_t* monster)
       }
     }
   }
-  move_character(dungeon, (character_t*)monster, nloc, monster->attributes.tunneling);
+  move_character(dungeon, monster, nloc, monster->attributes.tunneling);
 }
 
-void move_toward_pc_line(dungeon_t* dungeon, monster_t* monster)
+void move_toward_pc_line(dungeon_t* dungeon, Monster* monster)
 {
   point_t pcloc = monster->last_known_pc;
   point_t monloc = monster->loc;
@@ -231,8 +231,8 @@ void move_toward_pc_line(dungeon_t* dungeon, monster_t* monster)
 
 void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
-  monster_t* monster = ((monster_event_t*)this_event)->monster;
-  if (!((character_t*)monster)->alive)
+  Monster* monster = ((monster_event_t*)this_event)->monster;
+  if (!monster->alive)
   {
     /* delete monster and  don't re-add event */
     /* removed from character map already when killed */
@@ -260,7 +260,7 @@ void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
     int tries = 0;
     while (tries++ < 5)
     {
-      if (character_try_move_random(dungeon, (character_t*)monster, monster->attributes.tunneling))
+      if (character_try_move_random(dungeon, monster, monster->attributes.tunneling))
 	break;
     }
   } else
@@ -279,18 +279,18 @@ void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
     }
     else
     {
-      character_try_move_random(dungeon, (character_t*)monster, monster->attributes.tunneling);
+      character_try_move_random(dungeon, monster, monster->attributes.tunneling);
     }
   }
 
-  this_event->time += 100/((character_t*)monster)->speed;
+  this_event->time += 100/monster->speed;
   add_event((event_t*)this_event);
 }
 
-char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy)
+char pc_try_move(dungeon_t* dungeon, Player* pc, int dx, int dy)
 {
   char tunneling = 0;
-  point_t loc = ((character_t*)pc)->loc;
+  point_t loc = pc->loc;
   point_t nloc = { loc.x + dx, loc.y + dy };
 
   if (dungeon->terrain[nloc.y][nloc.x] == WALL)
@@ -320,15 +320,14 @@ char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy)
 
   if (dungeon->characters[nloc.y][nloc.x] != NULL)
   {
-    character_t* character = dungeon->characters[nloc.y][nloc.x];
+    Character* character = dungeon->characters[nloc.y][nloc.x];
     character->alive = 0;
-    dungeon->characters[nloc.y][nloc.x] = NULL;
     /* let the event handler clean it up */
     dungeon->num_characters--;
   }
   dungeon->characters[nloc.y][nloc.x] = pc;
   dungeon->characters[loc.y][loc.x] = NULL;
-  ((character_t*)pc)->loc = nloc;
+  pc->loc = nloc;
   return 1;
 }
 
@@ -346,15 +345,15 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 
   pc_turn_interface(dungeon, pc);
 
-  this_event->time += 100/((character_t*)pc)->speed;
+  this_event->time += 100/pc->speed;
   add_event(this_event);
 }
 
 void monster_cleanup(dungeon_t* dungeon, event_t* this_event)
 {
   monster_event_t* monster_event = ((monster_event_t*)this_event);
-  monster_t* monster = monster_event->monster;
-  point_t loc = ((character_t*)monster)->loc;
+  Monster* monster = monster_event->monster;
+  point_t loc = monster->loc;
   dungeon->characters[loc.y][loc.x] = NULL;
   delete monster;
   free(this_event);
@@ -382,7 +381,7 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
   int i;
   for (i = 0; i < num_monsters; i++)
   {
-    monster_t* monster = get_new_monster();
+    Monster* monster = get_new_monster();
     while (1)
     {
       int r = rand() % DUNGEON_ROWS;
@@ -390,11 +389,11 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
       if (dungeon->terrain[r][c] != WALL &&
 	  dungeon->characters[r][c] == NULL)
       {
-	((character_t*)monster)->loc.x = c;
-	((character_t*)monster)->loc.y = r;
-	dungeon->characters[r][c] = (character_t*)monster;
+	monster->loc.x = c;
+	monster->loc.y = r;
+	dungeon->characters[r][c] = monster;
 	monster_event_t* event = (monster_event_t*)malloc(sizeof(monster_event_t));
-	((event_t*)event)->time = 100/((character_t*)monster)->speed;
+	((event_t*)event)->time = 100/monster->speed;
 	((event_t*)event)->run = monster_take_turn;
 	((event_t*)event)->cleanup = monster_cleanup;
 	event->monster = monster;
@@ -405,7 +404,7 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
   }
 }
 
-void add_pc_event(pc_t* pc)
+void add_pc_event(Player* pc)
 {
   pc_event_t* pc_event = (pc_event_t*)malloc(sizeof(pc_event_t));
   ((event_t*)pc_event)->time = 0;
@@ -447,7 +446,11 @@ void Player::UpdateMemory(dungeon_t* dungeon)
   {
     for (dx = -3; dx <= 3; dx++)
     {
-      memory.terrain[loc.y+dy][loc.x+dx] = dungeon->terrain[loc.y+dy][loc.x+dx];
+      if (loc.y + dy >= 0 && loc.y + dy < DUNGEON_ROWS &&
+	  loc.x + dx >= 0 && loc.x + dx < DUNGEON_COLS)
+      {
+	memory.terrain[loc.y+dy][loc.x+dx] = dungeon->terrain[loc.y+dy][loc.x+dx];
+      }
     }
   }
 }
