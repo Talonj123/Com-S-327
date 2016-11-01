@@ -13,14 +13,14 @@
 void monster_list_interface(dungeon_t* dungeon)
 {
   int num_monsters = dungeon->num_characters-1;
-  character_t** character_list = calloc(num_monsters, sizeof(character_t*));
+  character_t** character_list = (character_t**)calloc(num_monsters, sizeof(character_t*));
   int r, c, i = 0;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
     {
       character_t* character = dungeon->characters[r][c];
-      if (character != NULL && get_character_type(character) == MONSTER)
+      if (character != NULL && character->type == MONSTER)
       {
 	character_list[i++] = character;
 	get_character_loc(character);
@@ -28,10 +28,10 @@ void monster_list_interface(dungeon_t* dungeon)
     }
   }
   point_t loc = get_character_loc((character_t*)dungeon->pc);
-  char **lines = malloc(sizeof(char*)*num_monsters);
+  char **lines = (char**)malloc(sizeof(char*)*num_monsters);
   for (i = 0; i < num_monsters; i++)
   {
-    lines[i] = malloc(sizeof(char)*35);
+    lines[i] = (char*)malloc(sizeof(char)*35);
     character_t* monster = character_list[i];
     point_t mloc = get_character_loc(monster);
     point_t diff = { mloc.x - loc.x, mloc.y - loc.y };

@@ -27,7 +27,7 @@ char check_make_dir()
   }
   int total_length = strlen(homedir) + strlen(dir);
 
-  char* expanded = malloc(total_length + 1);
+  char* expanded = (char*)malloc(total_length + 1);
 
   strcpy(expanded, homedir);
   strcpy(expanded + strlen(homedir), dir);
@@ -43,7 +43,7 @@ char check_make_dir()
   return to_return;
 }
 
-char save_dungeon(const dungeon_t* dungeon, char* name)
+char save_dungeon(const dungeon_t* dungeon, const char* name)
 {
   char error = 0;
   if (homedir == NULL)
@@ -51,9 +51,9 @@ char save_dungeon(const dungeon_t* dungeon, char* name)
     homedir = getenv("HOME");
   }
   check_make_dir();
-  char *save_dir = "/.rlg327/";
+  char *save_dir = (char*)"/.rlg327/";
   int total_length = strlen(homedir) + strlen(save_dir) + strlen(name);
-  char* expanded = malloc(total_length + 1);
+  char* expanded = (char*)malloc(total_length + 1);
 
   strcpy(expanded, homedir);
   strcpy(expanded + strlen(homedir), save_dir);
@@ -98,7 +98,7 @@ char save_dungeon(const dungeon_t* dungeon, char* name)
   return error;
 }
 
-dungeon_t* load_dungeon(char* name)
+dungeon_t* load_dungeon(const char* name)
 {
   if (homedir == NULL)
   {
@@ -106,9 +106,9 @@ dungeon_t* load_dungeon(char* name)
   }
   check_make_dir();
   dungeon_t* dungeon = NULL;
-  char *save_dir = "/.rlg327/";
+  char *save_dir = (char*)"/.rlg327/";
   int total_length = strlen(homedir) + strlen(save_dir) + strlen(name);
-  char* expanded = malloc(total_length + 1);
+  char* expanded = (char*)malloc(total_length + 1);
 
   strcpy(expanded, homedir);
   strcpy(expanded + strlen(homedir), save_dir);
@@ -129,7 +129,7 @@ dungeon_t* load_dungeon(char* name)
     version = be32toh(version);
     size = be32toh(size);
     
-    dungeon = malloc(sizeof(dungeon_t));
+    dungeon = (dungeon_t*)malloc(sizeof(dungeon_t));
     fread(dungeon->hardness, 1, DUNGEON_ROWS * DUNGEON_COLS, file);
     int r, c;
     for (r = 0; r < DUNGEON_ROWS; r++)
@@ -144,7 +144,7 @@ dungeon_t* load_dungeon(char* name)
     }
 
     dungeon->num_rooms = (size - 14 - 80*21)/4;
-    dungeon->rooms = malloc(sizeof(rectangle_t)*dungeon->num_rooms);
+    dungeon->rooms = (rectangle_t*)malloc(sizeof(rectangle_t)*dungeon->num_rooms);
     int i;
     for (i = 0; i < dungeon->num_rooms; i++)
     {

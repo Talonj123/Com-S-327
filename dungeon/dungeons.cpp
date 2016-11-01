@@ -1,30 +1,15 @@
-#include <stdlib.h>
-#include <math.h>
-#include <limits.h>
+//#include <stdlib>
+#include <cmath>
+#include <limits>
+#include <cstdio>
 
-#include <stdio.h>
+#include <queue>
 
 #include "dungeons_private.h"
 #include "coordinates.h"
 #include "characters.h"
 #include "pathfinding.h"
-
-#define TYPE point_t
-#define NAME point
-#include "data_structures/priority_queue.h"
-
-#define TYPE point_t
-#define NAME point
-#include "data_structures/list.h"
-
-#define TYPE point_t
-#define NAME point
-#include "data_structures/queue.h"
-
-#define TYPE tile_dijkstra_t*
-#define NAME path
-#define IS_POINTER 1
-#include "data_structures/priority_queue.h"
+#include "pqueue.hpp"
 
 #define HARDNESS dungeon->hardness[r][c]
 #define HARDNESS_AT(point) dungeon->hardness[point.y][point.x]
@@ -44,27 +29,33 @@
 
 #define NUM_ROOMS 10
 
-char check_join_domain(dungeon_t* dungeon, point_queue_t* domains, point_t to_check, hardness_t  to_join)
+using namespace std;
+
+char check_join_domain(dungeon_t* dungeon, queue<point_t>& domains, point_t to_check, hardness_t  to_join)
 {
   if (to_check.x < 0 || to_check.x >= DUNGEON_COLS || to_check.y < 0 || to_check.y >= DUNGEON_ROWS)
   {
     return 0;
   }
-  int r = to_check.y, c = to_check.x;
-  if (HARDNESS == (MIN_HARDNESS + MAX_HARDNESS)/2)
+  if (HARDNESS_AT(to_check) == (MIN_HARDNESS + MAX_HARDNESS)/2)
   {
-    HARDNESS = to_join;
-    point_queue_enqueue(domains, to_check);
+    HARDNESS_AT(to_check) = to_join;
+    domains.push(to_check);
     return 1;
+  }
+  else
+  {
+    
   }
   return 0;
 }
 
-void diffuse(dungeon_t* dungeon, point_queue_t* domains)
+void diffuse(dungeon_t* dungeon, queue<point_t>& domains)
 {
-  while (!point_queue_is_empty(domains))
+  while (!domains.empty())
   {
-    point_t tile = point_queue_dequeue(domains);
+    point_t tile = domains.front();
+    domains.pop();
     /* part of a domain */
     point_t lloc = tile;
     lloc.x--;
@@ -138,13 +129,13 @@ void soften(dungeon_t* dungeon)
 dungeon_t* get_blank_dungeon()
 {
   /* freed by client */
-  dungeon_t* dungeon = malloc(sizeof(dungeon_t));
+  dungeon_t* dungeon = (dungeon_t*)malloc(sizeof(dungeon_t));
   dungeon->num_rooms = 0;
   dungeon->num_characters = 0;
   dungeon->rooms = NULL;
   dungeon->pc = NULL;
 
-  point_queue_t* domains = new_point_queue();
+  queue<point_t> domains;
 
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
@@ -152,8 +143,8 @@ dungeon_t* get_blank_dungeon()
     for (c = 0; c < DUNGEON_COLS; c++)
     {
       TERRAIN = WALL;
-      DISTANCE = INT_MAX;
-      TUNNELING = INT_MAX;
+      DISTANCE = numeric_limits<int>::max();
+      TUNNELING = numeric_limits<int>::max();
       CHARACTER = NULL;
       /* Check for edge, if an edge tile, set to max hardness (100% hard, 0% breakable)
            otherwise, use a random value (assumes that RAND_MAX >> MAX_HARDNESS)
@@ -171,17 +162,19 @@ dungeon_t* get_blank_dungeon()
 	}
 	else
 	{
+	  do
+	  {
 	  /* should have a uniform distribution */
 	  HARDNESS = MIN_HARDNESS + (rand() % (MAX_HARDNESS - MIN_HARDNESS));
+	  } while (HARDNESS == (MAX_HARDNESS+MIN_HARDNESS)/2 || HARDNESS == MAX_HARDNESS || HARDNESS == MIN_HARDNESS);
 	  point_t domain = {c, r};
-          point_queue_enqueue(domains, domain);
+          domains.push(domain);
 	}
       }
     }
   }
 
   diffuse(dungeon, domains);
-  point_queue_free(domains);
 
   soften(dungeon);
   return dungeon;
@@ -217,9 +210,9 @@ char place_rect_room(dungeon_t* dungeon, rectangle_t border_rect)
   return 0;
 }
 
-int dijkstra_pqueue_compare(tile_dijkstra_t* a, tile_dijkstra_t* b)
+bool dijkstra_pqueue_compare(tile_dijkstra_t* a, tile_dijkstra_t* b)
 {
-  return (a->total_cost - b->total_cost) + (a->manhattan - b->manhattan);
+  return (a->total_cost + a->manhattan) > (b->total_cost + b->manhattan);
 }
 
 double get_dist(point_t a, point_t b)
@@ -230,7 +223,7 @@ double get_dist(point_t a, point_t b)
   return sqrt(dd);
 }
 
-void dijkstra_examine_neighbor(dungeon_t* dungeon, path_pqueue_t* to_visit, tile_dijkstra_t* parent, tile_dijkstra_t* neighbor, int new_cost)
+void dijkstra_examine_neighbor(dungeon_t* dungeon, PriorityQueue<tile_dijkstra_t*>& to_visit, tile_dijkstra_t* parent, tile_dijkstra_t* neighbor, int new_cost)
 {
   if (parent->parent != NULL)
   {
@@ -249,14 +242,14 @@ void dijkstra_examine_neighbor(dungeon_t* dungeon, path_pqueue_t* to_visit, tile
     /* set parent and score */ 
     neighbor->parent = parent;
     neighbor->total_cost = new_cost;
-    path_pqueue_decrease_priority_add_ptr(to_visit, neighbor);
+    to_visit.enqueue(neighbor);
   }
 }
 
 void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
 {
   /* the list of nodes to check out, 'cheapest' first */
-  path_pqueue_t* to_visit = new_path_pqueue(dijkstra_pqueue_compare);
+  PriorityQueue<tile_dijkstra_t*> to_visit(dijkstra_pqueue_compare);
   
   tile_dijkstra_t tile_data[DUNGEON_ROWS][DUNGEON_COLS];
   int r, c;
@@ -266,7 +259,7 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
     {
       point_t t = {c, r};
       tile_data[r][c].tile = t;
-      tile_data[r][c].total_cost = INT_MAX;
+      tile_data[r][c].total_cost = numeric_limits<int>::max();
       tile_data[r][c].parent = NULL;
       int dx = abs(room_b.x - c);
       int dy = abs(room_b.y - r);
@@ -277,13 +270,13 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
   tile_dijkstra_t* data = &tile_data[room_a.y][room_a.x];
   data->tile = room_a;
   data->total_cost = 0;
-  path_pqueue_enqueue(to_visit, data);
+  to_visit.enqueue(data);
 
-  while (!path_pqueue_is_empty(to_visit))
+  while (!to_visit.empty())
   {
     /* check out the tile's neighbors, and if the total cost to them reduces from what it was, add them to the queue */
 
-    data = path_pqueue_dequeue(to_visit);
+    data = to_visit.dequeue();
     if (data->tile.x == room_b.x &&
 	data->tile.y == room_b.y)
     {
@@ -332,7 +325,6 @@ void make_corridor(dungeon_t* dungeon, point_t room_a, point_t room_b)
       dijkstra_examine_neighbor(dungeon, to_visit, data, tile, new_cost);
     }
   }
-  path_pqueue_free(to_visit);
 
   /* path found, backtrack and convert walls to halls */
 
@@ -388,7 +380,7 @@ dungeon_t* dungeon_new()
     int max_height = DUNGEON_ROWS/6;
     int rooms_created = 0;
     dungeon->num_rooms = NUM_ROOMS;
-    dungeon->rooms = malloc(sizeof(rectangle_t)*NUM_ROOMS);
+    dungeon->rooms = (rectangle_t*)malloc(sizeof(rectangle_t)*NUM_ROOMS);
 
     while (rooms_created < NUM_ROOMS)
     {
@@ -469,7 +461,7 @@ void dungeon_free(dungeon_t* dungeon)
   {
     for (c = 1; c < DUNGEON_COLS - 1; c++)
     {
-      if (CHARACTER != NULL && get_character_type(CHARACTER) != PC)
+      if (CHARACTER != NULL && CHARACTER->type != PC)
       {
 	free_character(CHARACTER);
       }

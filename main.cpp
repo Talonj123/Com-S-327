@@ -22,9 +22,9 @@ int main(int argc, char *argv[])
   char save = 0;
   char num_monsters = 5;
   int args_processed = 1;
-  char* load_name = "dungeon.rlg327";
+  char* load_name = (char*)"dungeon.rlg327";
   char free_load_name = 0;
-  char* save_name = "dungeon.rlg327";
+  char* save_name = (char*)"dungeon.rlg327";
   char free_save_name = 0;
   while (argc > args_processed)
   {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	  else
 	  {
 	    free_load_name = 1;
-	    load_name = malloc(strlen(name) + 8);
+	    load_name = (char*)malloc(strlen(name) + 8);
 	    strcpy(load_name, name);
 	    strcpy(load_name + strlen(name), ".rlg327");
 	  }
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	  else
 	  {
 	    free_save_name = 1;
-	    save_name = malloc(strlen(name) + 8);
+	    save_name = (char*)malloc(strlen(name) + 8);
 	    strcpy(save_name, name);
 	    strcpy(save_name + strlen(name), ".rlg327");
 	  }

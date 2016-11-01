@@ -1,10 +1,7 @@
 #include "characters.h"
-extern "C"
-{
 #include "gameflow.h"
 #include "pathfinding.h"
 #include "io.h"
-}
 
 #include <limits.h>
 #include <unistd.h>

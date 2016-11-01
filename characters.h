@@ -1,38 +1,31 @@
 #ifndef _CHARACTERS_H_
 # define _CHARACTERS_H_
 
-#ifdef __cplusplus
-
-extern "C" {
-
-#endif
 #include "dungeon/coordinates.h"
 
-  typedef enum {
-    PC, MONSTER
-  } CharacterType;
+typedef enum {
+  PC, MONSTER
+} CharacterType;
 
-  typedef union monster_attributes
+typedef union monster_attributes
+{
+  unsigned char raw : 4;
+  struct
   {
-    unsigned char raw : 4;
-    struct
-    {
-      unsigned char intelligent : 1;
-      unsigned char telepathic : 1;
-      unsigned char tunneling : 1;
-      unsigned char erratic : 1;
-    };
-  } monster_attributes_t;
+    unsigned char intelligent : 1;
+    unsigned char telepathic : 1;
+    unsigned char tunneling : 1;
+    unsigned char erratic : 1;
+  };
+} monster_attributes_t;
 
 #include "dungeon/dungeon_independant.h"
 
-  typedef struct
-  {
-    tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
-  } PlayerMemory;
-  
-#ifdef __cplusplus
-}
+typedef struct
+{
+  tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
+} PlayerMemory;
+
 class character_t
 {
  public:
@@ -63,14 +56,6 @@ public:
 typedef class character_t Character;
 typedef class monster_t Monster;
 typedef class pc_t Player;
-
-extern "C" {
-
-#else
-  typedef struct Character character_t;
-  typedef struct Monster monster_t;
-  typedef struct Player pc_t;
-#endif //__cplusplus
   
 #include <stdlib.h>
 #include "dungeon/dungeons.h"
@@ -92,9 +77,5 @@ extern "C" {
 
   void free_pc(pc_t* pc);
   void free_character(character_t* pc);
-
-#ifdef __cplusplus
-}
-#endif //__cplusplus
 
 #endif //_CHARACTERS_H_

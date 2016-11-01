@@ -3,10 +3,7 @@
 #include <stdio.h>
 
 #include "dungeon/dungeons.h"
-
-#define TYPE point_t
-#define NAME point
-#include "data_structures/priority_queue.h"
+#include "pqueue.hpp"
 
 #define DISTANCE(point) dungeon->distance_to_pc[point.y][point.x]
 #define TUNNELING(point) dungeon->tunneling_distance_to_pc[point.y][point.x]
@@ -35,12 +32,12 @@ void get_distances(dungeon_t* target)
   get_distances_tunneling(target);
 }
 
-int compare_tile_dist_non_tunneling(point_t a, point_t b)
+bool compare_tile_dist_non_tunneling(point_t a, point_t b)
 {
-  return (DISTANCE(a) - DISTANCE(b));
+  return (DISTANCE(a) > DISTANCE(b));
 }
 
-void visit_tile_non_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost, point_t new_tile)
+void visit_tile_non_tunneling(dungeon_t* dungeon, PriorityQueue<point_t>& pqueue, int cCost, point_t new_tile)
 {
   if (new_tile.x < 0 || new_tile.x > DUNGEON_COLS - 1 ||
       new_tile.y < 0 || new_tile.y > DUNGEON_ROWS - 1)
@@ -52,21 +49,21 @@ void visit_tile_non_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cC
     if (DISTANCE(new_tile) > cCost + 1)
     {
       DISTANCE(new_tile) = cCost + 1;
-      point_pqueue_decrease_priority_add(pqueue, new_tile, point_equals);
+      pqueue.decrease_priority(new_tile, point_equals);
     }
   }
 }
 
 void get_distances_non_tunneling(dungeon_t* dungeon)
 {
-  point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_non_tunneling);
+  PriorityQueue<point_t> pqueue(compare_tile_dist_non_tunneling);
   point_t loc = get_character_loc((character_t*)dungeon->pc);
 
   DISTANCE(loc) = 0;
-  point_pqueue_enqueue(pqueue, loc);
-  while (!point_pqueue_is_empty(pqueue))
+  pqueue.enqueue(loc);
+  while (!pqueue.empty())
   {
-    loc = point_pqueue_dequeue(pqueue);
+    loc = pqueue.dequeue();
     point_t l  = {loc.x - 1, loc.y};
     point_t ul = {loc.x - 1, loc.y - 1};
     point_t u  = {loc.x, loc.y - 1};
@@ -86,7 +83,6 @@ void get_distances_non_tunneling(dungeon_t* dungeon)
     visit_tile_non_tunneling(dungeon, pqueue, distance, l);
     visit_tile_non_tunneling(dungeon, pqueue, distance, ul);
   }
-  point_pqueue_free(pqueue);
 }
 
 /**************************************************************************************/
@@ -111,16 +107,16 @@ int get_cost(dungeon_t* dungeon, point_t tile)
   return 255;
 }
 
-int compare_tile_dist_tunneling(point_t a, point_t b)
+bool compare_tile_dist_tunneling(point_t a, point_t b)
 {
   /* Added the hardness element to reduce the number of times that a tile gets re-added
    * and the whold ething re-evaluated. works because the tile that will produce the 
    * smallest values in other tiles get run first.
    */
-  return (TUNNELING(a) - TUNNELING(b)) + (HARDNESS(a) - HARDNESS(b));
+  return (TUNNELING(a) + HARDNESS(a)) > (TUNNELING(b) + HARDNESS(b));
 }
 
-void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost, point_t new_tile)
+void visit_tile_tunneling(dungeon_t* dungeon, PriorityQueue<point_t>& pqueue, int cCost, point_t new_tile)
 {
   if (new_tile.x < 0 || new_tile.x > DUNGEON_COLS - 1 ||
       new_tile.y < 0 || new_tile.y > DUNGEON_ROWS - 1)
@@ -133,20 +129,20 @@ void visit_tile_tunneling(dungeon_t* dungeon, point_pqueue_t* pqueue, int cCost,
     if (TUNNELING(new_tile) > new_cost)
     {
       TUNNELING(new_tile) = new_cost;
-      point_pqueue_decrease_priority_add(pqueue, new_tile, point_equals);
+      pqueue.decrease_priority(new_tile, point_equals);
     }
   }
 }
 
 void get_distances_tunneling(dungeon_t* target)
 {
-  point_pqueue_t* pqueue = new_point_pqueue(compare_tile_dist_tunneling);
+  PriorityQueue<point_t> pqueue(compare_tile_dist_tunneling);
   point_t loc = get_character_loc((character_t*)dungeon->pc);
   TUNNELING(loc) = 0;
-  point_pqueue_enqueue(pqueue, loc);
-  while (!point_pqueue_is_empty(pqueue))
+  pqueue.enqueue(loc);
+  while (!pqueue.empty())
   {
-    loc = point_pqueue_dequeue(pqueue);
+    loc = pqueue.dequeue();
 
     point_t l  = {loc.x -1, loc.y +0};
     point_t ul = {loc.x -1, loc.y -1};
@@ -167,5 +163,4 @@ void get_distances_tunneling(dungeon_t* target)
     visit_tile_tunneling(dungeon, pqueue, distance, l);
     visit_tile_tunneling(dungeon, pqueue, distance, ul);
   }
-  point_pqueue_free(pqueue);
 }
