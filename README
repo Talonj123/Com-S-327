@@ -3,11 +3,7 @@ The --load and --save flags act as defined in Assignment 1.02.
 Pathfinding distance maps are generated as defined by Assignment 1.03.
 The Monsters move according to Assignment 1.04.
 IO is handled according to Assignment 1.05.
+Characters and fog of ware are implemented according to assignment 1.06.
 
-The characters are implemented as C++ classes, with the motion of NPC's handled by C++ source code. There is a C interface provided in the header file (characters.h) alongside the C++ interface. In the C++ code, the prefered character class aliases are Character, Player, and Monster. In the C interface, the names are character_t, pc_t, and monster_t. The C code handles the characters as opaque pointers (incomplete types) and the C++ code exports a C interface to get/set the needed members.
-
-For the interface elements, see characters.h. For the C++ implementations, see characters.cpp.
-
-The Fog of War implementation involves a memory struct for the Player (might become a class at some point) at the moment, the Player only remembers some terrain, however, it could theoretically remember other things later. The ownership of the memory allocated to the Player has been moved to the game as a whole, so the PC gets preserved accross levels (dungeons). Management of that memory has been moved to main.c. This required the addition of a set_pc(.) method in dungeon/dungeons.c. Each turn, the Player's memory is updated from the dungeon via the Player::UpdateMemory(.) method (characters.cpp).
-
-Some of the header management got hairy with circular dependancies with other files, so I made a dungeon_independant.h header that holds dungeon typedef and #defines that do not depend on other files at all. These can be included without the circular dependancy headache (needed for tile_types enum and sungeon size defines that the Player must use for it's memory).
+The dungeon file is parsed according to the spec, however, the program does not terminate if it does not see a header, it always skips it unitl it gets to BEGIN MONSTER anyways. (The spec says we MAY exit if it is abssent, not that we have to check for it).
+My parser is a big loop involging stages for different static tokens, and a big if..else if...else if..........else if...else to handle the dynamic tokens. Each token's case handles the parding of it;s data. The dice have shared parsing code, since they are all the same.

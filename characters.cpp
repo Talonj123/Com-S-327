@@ -34,7 +34,7 @@ typedef struct pc_event
 Monster* get_new_monster()
 {
   Monster* monster = new Monster();
-  char attributes = rand()%16;
+  char attributes = rand()%32;
   int speed = rand()%15 + 5;
   //attributes = ERRATIC | TUNNELING;
   monster->attributes.raw = attributes;

@@ -1,13 +1,17 @@
 #variables
-assignment_num ?= 1.06
+assignment_num ?= 1.07
 name = talbert_james
 main_target = dungeons
 folder_name = $(name).assignment-$(assignment_num)
 
 g++_flags = -ggdb -Wall -Werror -lm -Idata_structures -Idungeon -lncurses	
 
+parser: generation.o
+	g++ -o rlg327 generation.o
+
+
 #Top-level targets
-dungeons: dungeons.a main.cpp save.a pathfinding.o characters.o gameflow.a io.o
+dungeons: dungeons.a main.cpp save.a pathfinding.o characters.o gameflow.a io.o generation.o
 	g++ $(g++_flags) -c -o main.o main.cpp
 	g++ $(g++_flags) -o $@ main.o save.a dungeons.a pathfinding.o characters.o gameflow.a io.o
 
@@ -21,6 +25,7 @@ examples: clean $(main_target)
 	less example2
 
 clean: clean_general
+	rm -f rlg327
 	rm -f *.map
 	rm -f *_test
 	rm -f example*
@@ -48,6 +53,9 @@ save.a: save.cpp save.h
 gameflow.a: gameflow.cpp gameflow.h pqueue.hpp
 	g++ $(g++_flags) -c -o gameflow.o gameflow.cpp
 	ld -r -o $@ gameflow.o
+
+generation.o: generation.cpp generation.hpp
+	g++ $(g++_flags) -c -o $@ generation.cpp
 
 #Common targets
 clean_general:

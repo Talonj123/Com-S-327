@@ -1,4 +1,11 @@
 # Change Log
+## 2016-11-2
+ - Added monster parsing
+
+## 2016-10-31
+# Changes
+ - Made the whole thing C++, including a new priority queue class
+ 
 ## 2016-10-26
 # Changes
  - Changed Player (pc_t) memory ownership
