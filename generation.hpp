@@ -13,11 +13,14 @@ private:
 public:
   dice(int base = 0, int num = 0, int sides = 0);
   int roll() const;
-  void print(std::ostream&);
-  operator int () const;
+  //operator int () const;
+
+  void print(std::ostream&) const;
 
   static bool parse(std::istream&, dice*);
 };
+
+std::ostream& operator<<(std::ostream&, const dice&);
 
 class monster_data
 {
@@ -36,8 +39,39 @@ public:
   static bool try_parse(std::istream&, monster_data*);
   Monster create() const;
 
-  void print(std::ostream&);
+  void print(std::ostream&) const;
 
 };
+
+class object_data
+{
+public:
+  typedef enum object_type
+  {WEAPON, OFFHAND, RANGED, ARMOR, HELMET, CLOAK, GLOVES, BOOTS, RING, AMULET, LIGHT, SCROLL, BOOK, FLASK, GOLD, AMMUNITION, FOOD, WAND, CONTAINER} type;
+private:
+  std::string name;
+  std::string description;
+  type item_type;
+  std::vector<int> colors;
+  dice hitpoints;
+  dice damage;
+  dice dodge;
+  dice defense;
+  dice weight;
+  dice speed;
+  dice special;
+  dice value;
+
+public:
+  static bool try_parse(std::istream&, object_data*);
+  static object_data::type get_type(std::string name);
+  static std::string get_type_name(object_data::type type);
+
+  void print(std::ostream&) const;
+};
+
+
+int get_color(std::string name);
+std::string get_color_name(int color);
 
 #endif //_GENERATION_H_

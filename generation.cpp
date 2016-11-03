@@ -7,6 +7,8 @@
 #include <ncurses.h>
 #include "generation.hpp"
 
+#define RepCheck(phase) if (found.phase) { error = true; break; } found.phase = true;
+
 using namespace std;
 using namespace std::tr1;
 
@@ -31,13 +33,19 @@ int dice::roll() const
   return val;
 }
 
+/*
 dice::operator int () const
 {
   return roll();
 }
+*/
 
 bool dice::parse(istream& stream, dice* target)
 {
+  while (isspace(stream.peek()))
+  {
+    stream.get();
+  }
   int value = 0;
   while (isdigit(stream.peek()))
   {
@@ -71,9 +79,15 @@ bool dice::parse(istream& stream, dice* target)
   return true;
 }
 
-void dice::print(std::ostream& stream)
+void dice::print(ostream& stream) const
 {
-  stream << base << '+' << num << 'd' << sides << endl;
+  stream << base << '+' << num << 'd' << sides;
+}
+
+ostream& operator<<(ostream& stream, const dice& d)
+{
+  d.print(stream);
+  return stream;
 }
 
 bool monster_data::try_parse(istream& stream, monster_data* monster)
@@ -87,7 +101,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
   stream.unget();
   enum
   {
-  BEGIN, MONSTER, DETAILS
+  BEGIN, DETAILS
   } state;
   state = BEGIN;
 
@@ -108,53 +122,41 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
   } found;
   found.raw = 0;
 
-  string line;
+  string next;
   bool complete = false;
   bool error = false;
-  while (!complete && !error && (stream >> line))
+  while (!complete && !error && (stream >> next))
   {
     switch (state)
     {
     case BEGIN:
-      if (!line.compare("BEGIN"))
+      if (!next.compare("BEGIN"))
       {
-	state = MONSTER;
-      }
-      break;
-    case MONSTER:
-      if (!line.compare("MONSTER"))
-      {
-	state = DETAILS;
+	stream >> next;
+	if (!next.compare("MONSTER"))
+	{
+	  state = DETAILS;
+	}
       }
       break;
     case DETAILS:
-      if (!line.compare("END"))
+      if (!next.compare("END"))
       {
 	complete = true;
 	break;
       }
-      else if (!line.compare("NAME"))
+      else if (!next.compare("NAME"))
       {
-	if (found.name)
-	{
-	  error = true;
-	  break;
-	}
-	found.name = true;
+	RepCheck(name);
 	while (isspace(stream.peek()))
 	{
 	  stream.get();
 	}
 	getline(stream, monster->name);
       }
-      else if (!line.compare("SYMB"))
+      else if (!next.compare("SYMB"))
       {
-	if (found.symbol)
-	{
-	  error = true;
-	  break;
-	}
-	found.symbol = true;
+	RepCheck(symbol);
 	while (isspace(stream.peek()))
 	{
 	  stream.get();
@@ -165,14 +167,9 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	  stream.get();
 	}
       }
-      else if (!line.compare("COLOR"))
+      else if (!next.compare("COLOR"))
       {
-	if (found.color)
-	{
-	  error = true;
-	  break;
-	}
-	found.color = true;
+	RepCheck(color);
 	monster->colors.clear();
 	while (isspace(stream.peek()))
 	{
@@ -182,45 +179,19 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	while (stream.peek() != '\r' && stream.peek() != '\n')
 	{
 	  stream >> colorname;
-	  if (!colorname.compare("BLACK"))
+	  int color = get_color(colorname);
+	  if (color == -1)
 	  {
-	    monster->colors.push_back(COLOR_BLACK);
-	  }
-	  else if (!colorname.compare("RED"))
-	  {
-	    monster->colors.push_back(COLOR_RED);
-	  }
-	  else if (!colorname.compare("GREEN"))
-	  {
-	    monster->colors.push_back(COLOR_GREEN);
-	  }
-	  else if (!colorname.compare("YELLOW"))
-	  {
-	    monster->colors.push_back(COLOR_YELLOW);
-	  }
-	  else if (!colorname.compare("BLUE"))
-	  {
-	    monster->colors.push_back(COLOR_BLUE);
-	  }
-	  else if (!colorname.compare("MAGENTA"))
-	  {
-	    monster->colors.push_back(COLOR_MAGENTA);
-	  }
-	  else if (!colorname.compare("CYAN"))
-	  {
-	    monster->colors.push_back(COLOR_CYAN);
-	  }
-	  else if (!colorname.compare("WHITE"))
-	  {
-	    monster->colors.push_back(COLOR_WHITE);
+	    error = true;
+	    break;
 	  }
 	  else
 	  {
-	    error = true;
+	    monster->colors.push_back(color);
 	  }
 	}
       }
-      else if (!line.compare("DESC"))
+      else if (!next.compare("DESC"))
       {
 	if (found.description)
 	{
@@ -269,7 +240,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	  goto PARSE_DESC_LINE;
 	}
       }
-      else if (!line.compare("SPEED"))
+      else if (!next.compare("SPEED"))
       {
 	if (found.speed)
 	{
@@ -283,7 +254,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	}
 	error |= !dice::parse(stream, &monster->speed);
       }
-      else if (!line.compare("DAM"))
+      else if (!next.compare("DAM"))
       {
 	if (found.damage)
 	{
@@ -297,7 +268,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	}
 	error |= !dice::parse(stream, &monster->damage);
       }
-      else if (!line.compare("HP"))
+      else if (!next.compare("HP"))
       {
 	if (found.hitpoints)
 	{
@@ -311,7 +282,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	}
 	error |= !dice::parse(stream, &monster->hitpoints);
       }
-      else if (!line.compare("ABIL"))
+      else if (!next.compare("ABIL"))
       {
 	if (found.abilities)
 	{
@@ -384,14 +355,54 @@ string  get_color_name(int color)
   return "????";
 }
 
-void monster_data::print(ostream& stream)
+int get_color(string name)
+{
+  if (!name.compare("BLACK"))
+  {
+    return COLOR_BLACK;
+  }
+  else if (!name.compare("RED"))
+  {
+    return COLOR_RED;
+  }
+  else if (!name.compare("GREEN"))
+  {
+    return COLOR_GREEN;
+  }
+  else if (!name.compare("YELLOW"))
+  {
+    return COLOR_YELLOW;
+  }
+  else if (!name.compare("BLUE"))
+  {
+    return COLOR_BLUE;
+  }
+  else if (!name.compare("MAGENTA"))
+  {
+    return COLOR_MAGENTA;
+  }
+  else if (!name.compare("CYAN"))
+  {
+    return COLOR_CYAN;
+  }
+  else if (!name.compare("WHITE"))
+  {
+    return COLOR_WHITE;
+  }
+  else
+  {
+    return -1;
+  }
+}
+
+void monster_data::print(ostream& stream) const
 {
   stream << "Name: " << name << endl;
   stream << "Symbol: " << symbol << endl;
   stream << "Description: " << description << endl;
   stream << "Colors:";
 
-  for (vector<int>::iterator it = colors.begin() ; it != colors.end(); ++it)
+  for (vector<int>::const_iterator it = colors.begin() ; it != colors.end(); ++it)
   {
     cout << " " << get_color_name(*it);
   }
@@ -428,23 +439,308 @@ void monster_data::print(ostream& stream)
   damage.print(stream);
 }
 
+bool object_data::try_parse(std::istream& stream, object_data* object)
+{
+  
+  stream.get();
+  if (stream.eof())
+  {
+    return false;
+  }
+  stream.unget();
+  enum {BEGIN, DETAILS} state = BEGIN;
+  union
+  {
+    struct
+    {
+      bool name : 1;
+      bool type : 1;
+      bool color : 1;
+      bool speed : 1;
+      bool value : 1;
+      bool dodge : 1;
+      bool weight : 1;
+      bool damage : 1;
+      bool defense : 1;
+      bool attribute : 1;
+      bool hitpoints : 1;
+      bool description : 1;
+    };
+    int raw;
+  } found;
+  found.raw = 0;
+  bool complete = false, error = false;
+  string next;
+  while (!complete && !error && (stream >> next))
+  {
+    switch (state)
+    {
+    case BEGIN:
+      if (!next.compare("BEGIN"))
+      {
+	stream >> next;
+	if (!next.compare("OBJECT"))
+	{
+	  state = DETAILS;
+	}
+      }
+      break;
+    case DETAILS:
+      if (!next.compare("END"))
+      {
+	complete = true;
+	break;
+      }
+      else if (!next.compare("NAME"))
+      {
+	RepCheck(name);
+	while (isspace(stream.peek()))
+	{
+	  stream.get();
+	}
+	getline(stream, object->name);
+      }
+      else if (!next.compare("TYPE"))
+      {
+	RepCheck(type);
+	stream >> next;
+	object->item_type = get_type(next);
+      }
+      else if (!next.compare("COLOR"))
+      {
+	RepCheck(color);
+	object->colors.clear();
+	while (isspace(stream.peek()))
+	{
+	  stream.get();
+	}
+	string colorname;
+	while (stream.peek() != '\r' && stream.peek() != '\n')
+	{
+	  stream >> colorname;
+	  int color = get_color(colorname);
+	  if (color == -1)
+	  {
+	    error = true;
+	    break;
+	  }
+	  else
+	  {
+	    object->colors.push_back(color);
+	  }
+	}
+      }
+      else if (!next.compare("WEIGHT"))
+      {
+	RepCheck(weight);
+	error |= !dice::parse(stream, &object->weight);
+      }
+      else if (!next.compare("HIT"))
+      {
+	RepCheck(hitpoints);
+	error |= !dice::parse(stream, &object->hitpoints);
+      }
+      else if (!next.compare("DAM"))
+      {
+	RepCheck(damage);
+	error |= !dice::parse(stream, &object->damage);
+      }
+      else if (!next.compare("ATTR"))
+      {
+	RepCheck(attribute);
+	error |= !dice::parse(stream, &object->special);
+      }
+      else if (!next.compare("VAL"))
+      {
+	RepCheck(value);
+	error |= !dice::parse(stream, &object->value);
+      }
+      else if (!next.compare("DODGE"))
+      {
+	RepCheck(dodge);
+	error |= !dice::parse(stream, &object->dodge);
+      }
+      else if (!next.compare("DEF"))
+      {
+	RepCheck(defense);
+	error |= !dice::parse(stream, &object->defense);
+      }
+      else if (!next.compare("SPEED"))
+      {
+	RepCheck(speed);
+	error |= !dice::parse(stream, &object->speed);
+      }
+      else if (!next.compare("DESC"))
+      {
+	RepCheck(description);
+	while (isspace(stream.peek()))
+	{
+	  stream.get();
+	}
+	object->description.clear();
+	char c;
+	int length = 0;
+	c = stream.get();
+      PARSE_DESC_LINE:
+	while (!(c == '\r' || c == '\n') && (length < 77))
+	{
+	  object->description += c;
+	  length++;
+	  c = stream.get();
+	}
+	if (stream.peek() == '\n')
+	{
+	  stream.get();
+	}
+	if (length > 77)
+	{
+	  error = true;
+	}
+	else
+	{
+	  // line termineated before limit
+	  if (stream.peek() == '.')
+	  {
+	    stream.get();
+	    if (stream.peek() == '\r' || stream.peek() == '\n')
+	    {
+	      stream.unget();
+	      break;
+	    }
+	  }
+	  object->description += ' ';
+	  length = 0;
+	  c = stream.get();
+	  goto PARSE_DESC_LINE;
+	}
+      }
+      break;
+    }
+    if (error)
+    {
+      error = false;
+      complete = false;
+      found.raw = 0;
+      state = BEGIN;
+      if (stream.eof())
+      {
+	return false;
+      }
+    }
+  }
+  if (found.raw != 0xFFF)
+  {
+    return false;
+  }
+  return complete;
+}
+
+object_data::type object_data::get_type(string name)
+{
+  if (!name.compare("WEAPON")) return  WEAPON;
+  if (!name.compare("OFFHAND")) return OFFHAND;
+  if (!name.compare("RANGED")) return RANGED;
+  if (!name.compare("ARMOR")) return ARMOR;
+  if (!name.compare("HELMET")) return HELMET;
+  if (!name.compare("CLOAK")) return CLOAK;
+  if (!name.compare("GLOVES")) return GLOVES;
+  if (!name.compare("BOOTS")) return BOOTS;
+  if (!name.compare("RING")) return RING;
+  if (!name.compare("AMULET")) return AMULET;
+  if (!name.compare("LIGHT")) return LIGHT;
+  if (!name.compare("SCROLL")) return SCROLL;
+  if (!name.compare("BOOK")) return BOOK;
+  if (!name.compare("FLASK")) return FLASK;
+  if (!name.compare("GOLD")) return GOLD;
+  if (!name.compare("AMMUNITION")) return AMMUNITION;
+  if (!name.compare("FOOD")) return FOOD;
+  if (!name.compare("WAND")) return WAND;
+  if (!name.compare("CONTAINER")) return CONTAINER;
+  return (object_data::type)-1;
+}
+
+string object_data::get_type_name(object_data::type type)
+{
+  switch (type)
+  {
+  case WEAPON: return "WEAPON";
+  case OFFHAND: return "OFFHAND";
+  case RANGED: return "RANGED";
+  case ARMOR: return "ARMOR";
+  case HELMET: return "HELMET";
+  case CLOAK: return "CLOAK";
+  case GLOVES: return "GLOVES";
+  case BOOTS: return "BOOTS";
+  case RING: return "RING";
+  case AMULET: return "AMULET";
+  case LIGHT: return "LIGHT";
+  case SCROLL: return "SCROLL";
+  case BOOK: return "BOOK";
+  case FLASK: return "FLASK";
+  case GOLD: return "GOLD";
+  case AMMUNITION: return "AMMUNITION";
+  case FOOD: return "FOOD";
+  case WAND: return "WAND";
+  case CONTAINER: return "CONTAINER";
+  }
+  return "????";
+}
+
+void object_data::print(ostream& stream) const
+{
+  stream << "Name: " << name << endl;
+  stream << "Descritpion: " << description << endl;
+  stream << "Type: " << get_type_name(item_type) << endl;
+  stream << "Colors:";
+  for (vector<int>::const_iterator it = colors.begin() ; it != colors.end(); ++it)
+  {
+    cout << " " << get_color_name(*it);
+  }
+  cout << endl;
+  stream << "Hitpoint Bonus: " << hitpoints << endl;
+  stream << "Damage Bonus: " << damage << endl;
+  stream << "Dodge Bonus: " << dodge << endl;
+  stream << "Defensive Bonus: " << defense << endl;
+  stream << "Weight: " << weight << endl;
+  stream << "Speed Bonus: " << speed << endl;
+  stream << "Special: " << special << endl;
+  stream << "Value: " << value << endl;
+}
+
 int main()
 {
-  monster_data data;
   ifstream file;
   string path(getenv("HOME"));
   path += "/.rlg327/monster_desc.txt";
   cout << path << endl;
   file.open(path.c_str());
   vector<monster_data> monster_types;
-  monster_data current;
-  while (monster_data::try_parse(file, &current))
+  monster_data mcurrent;
+  while (monster_data::try_parse(file, &mcurrent))
   {
-    monster_types.push_back(current);
+    monster_types.push_back(mcurrent);
     cout << "loaded monster # " << monster_types.size() << endl;
   }
-  file.close();
   for (vector<monster_data>::iterator it = monster_types.begin() ; it != monster_types.end(); ++it)
+  {
+    cout << endl << endl;
+    it->print(cout);
+  }
+  file.close();
+
+  path = getenv("HOME");
+  path += "/.rlg327/object_desc.txt";
+  cout << path << endl;
+  file.open(path.c_str());
+  vector<object_data> object_types;
+  object_data ocurrent;
+  while (object_data::try_parse(file, &ocurrent))
+  {
+    object_types.push_back(ocurrent);
+    cout << "loaded object # " << object_types.size() << endl;
+  }
+  file.close();
+  for (vector<object_data>::iterator it = object_types.begin() ; it != object_types.end(); ++it)
   {
     cout << endl << endl;
     it->print(cout);
