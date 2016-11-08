@@ -13,13 +13,13 @@
 void monster_list_interface(dungeon_t* dungeon)
 {
   int num_monsters = dungeon->num_characters-1;
-  character_t** character_list = (character_t**)calloc(num_monsters, sizeof(character_t*));
+  character** character_list = (character**)calloc(num_monsters, sizeof(character*));
   int r, c, i = 0;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
     {
-      character_t* character = dungeon->characters[r][c];
+      character* character = dungeon->characters[r][c];
       if (character != NULL && character->type == MONSTER)
       {
 	character_list[i++] = character;
@@ -27,12 +27,12 @@ void monster_list_interface(dungeon_t* dungeon)
       }
     }
   }
-  point_t loc = get_character_loc((character_t*)dungeon->pc);
+  point_t loc = get_character_loc((character*)dungeon->pc);
   char **lines = (char**)malloc(sizeof(char*)*num_monsters);
   for (i = 0; i < num_monsters; i++)
   {
     lines[i] = (char*)malloc(sizeof(char)*35);
-    character_t* monster = character_list[i];
+    character* monster = character_list[i];
     point_t mloc = get_character_loc(monster);
     point_t diff = { mloc.x - loc.x, mloc.y - loc.y };
     sprintf(lines[i], "| A %c, %2d %5s and %2d %4s |",
@@ -118,11 +118,15 @@ void monster_list_interface(dungeon_t* dungeon)
   print_dungeon(dungeon);
 }
 
-void pc_turn_interface(dungeon_t* dungeon, pc_t* pc)
+void pc_turn_interface(dungeon_t* dungeon, player* pc)
 {
- print_dungeon(dungeon);
+  if (!pc->alive)
+  {
+    fprintf(stderr, "PC DEAD, BUT INTERFACE CALLED\n");
+  }
+  print_dungeon(dungeon);
   
- point_t loc = get_character_loc((character_t*)pc);
+  point_t loc = get_character_loc((character*)pc);
 
   /*
   int r, c, num = 0;
@@ -247,7 +251,7 @@ GETCHAR_LBL:
 void print_dungeon(dungeon_t* dungeon)
 {
   PlayerMemory memory = get_pc_memory(dungeon->pc);
-  point_t loc = get_character_loc((character_t*)dungeon->pc);
+  point_t loc = get_character_loc((character*)dungeon->pc);
   int r, c;
   for (r = 0; r < 21; r++)
   {
@@ -256,9 +260,12 @@ void print_dungeon(dungeon_t* dungeon)
       tile_type tile = memory.terrain[r][c];
       //tile_type tile = dungeon->terrain[r][c];
       char ch = ' ';
+      int color = COLOR_WHITE;
       if (dungeon->characters[r][c] != NULL && (abs(loc.x - c) <= 3) && (abs(loc.y - r) <= 3))
       {
-        ch = get_character_symbol(dungeon->characters[r][c]);
+	character* character = dungeon->characters[r][c];
+        ch = get_character_symbol(character);
+	color = character->colors[0];
       }
       else if (tile == WALL)
       {
@@ -280,7 +287,9 @@ void print_dungeon(dungeon_t* dungeon)
       {
         ch = '>';
       }
+      attron(COLOR_PAIR(color));
       mvaddch(r, c, ch);
+      attroff(COLOR_PAIR(color));
     }
   }
   refresh();
@@ -293,6 +302,15 @@ void init_io()
   keypad(stdscr, TRUE);
   noecho();
   set_escdelay(100);
+  start_color();
+  init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
+  init_pair(COLOR_BLACK, COLOR_BLACK, COLOR_BLACK);
+  init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);
+  init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
+  init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLACK);
+  init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+  init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
+  init_pair(COLOR_WHITE, COLOR_WHITE, COLOR_BLACK);
 }
 
 void end_io()

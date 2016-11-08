@@ -1,5 +1,4 @@
 #include <cstdlib>
-#include <tr1/regex>
 #include <cstdio>
 #include <iostream>
 #include <fstream>
@@ -10,7 +9,6 @@
 #define RepCheck(phase) if (found.phase) { error = true; break; } found.phase = true;
 
 using namespace std;
-using namespace std::tr1;
 
 dice::dice(int base, int num, int sides)
 {
@@ -27,18 +25,16 @@ int dice::roll() const
     int i;
     for (i = 0; i < num; i++)
     {
-      val += rand() % sides;
+      val += (rand() % sides) + 1;
     }
   }
   return val;
 }
 
-/*
 dice::operator int () const
 {
   return roll();
 }
-*/
 
 bool dice::parse(istream& stream, dice* target)
 {
@@ -190,6 +186,10 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	    monster->colors.push_back(color);
 	  }
 	}
+	if (monster->colors.size() < 1)
+	{
+	  error = true;
+	}
       }
       else if (!next.compare("DESC"))
       {
@@ -290,6 +290,8 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	  break;
 	}
 	found.abilities = true;
+	monster->attributes.raw = 0;
+	monster->attributes.corporeal = 1;
         while (stream.peek() != '\r' && stream.peek() != '\n')
 	{
 	  monster->attributes.corporeal = 1;
@@ -340,6 +342,67 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
     goto MONSTER_DATA_PARSE_TOP;
   }
   return complete;
+}
+
+void monster_data::print(ostream& stream) const
+{
+  stream << "Name: " << name << endl;
+  stream << "Symbol: " << symbol << endl;
+  stream << "Description: " << description << endl;
+  stream << "Colors:";
+
+  for (vector<int>::const_iterator it = colors.begin() ; it != colors.end(); ++it)
+  {
+    cout << " " << get_color_name(*it);
+  }
+  cout << endl;
+
+  stream << "Speed: ";
+  speed.print(stream);
+
+  stream << "Abilities:";
+  if (attributes.intelligent)
+  {
+      stream << " intelligent";
+  }
+  if (attributes.telepathic)
+  {
+      stream << " telepathic";
+  }
+  if (attributes.tunneling)
+  {
+      stream << " tunneling";
+  }
+  if (attributes.erratic)
+  {
+      stream << " erratic";
+  }
+  if (!attributes.corporeal)
+  {
+      stream << " non-corporeal";
+  }
+  stream << endl;
+  stream << "Hitpoints: ";
+  hitpoints.print(stream);
+  stream << "Attack Damage: ";
+  damage.print(stream);
+}
+
+ostream& operator<<(ostream& stream, const monster_data& mon)
+{
+  mon.print(stream);
+  return stream;
+}
+
+monster* monster_data::create() const
+{
+  monster* monster = new ::monster();
+  monster->symbol = symbol;
+  monster->speed = speed;
+  monster->type = MONSTER;
+  monster->attributes = attributes;
+  monster->colors = vector<int>(colors);
+  return monster;
 }
 
 string  get_color_name(int color)
@@ -393,50 +456,6 @@ int get_color(string name)
   {
     return -1;
   }
-}
-
-void monster_data::print(ostream& stream) const
-{
-  stream << "Name: " << name << endl;
-  stream << "Symbol: " << symbol << endl;
-  stream << "Description: " << description << endl;
-  stream << "Colors:";
-
-  for (vector<int>::const_iterator it = colors.begin() ; it != colors.end(); ++it)
-  {
-    cout << " " << get_color_name(*it);
-  }
-  cout << endl;
-
-  stream << "Speed: ";
-  speed.print(stream);
-
-  stream << "Abilities:";
-  if (attributes.intelligent)
-  {
-      stream << " intelligent";
-  }
-  if (attributes.telepathic)
-  {
-      stream << " telepathic";
-  }
-  if (attributes.tunneling)
-  {
-      stream << " tunneling";
-  }
-  if (attributes.erratic)
-  {
-      stream << " erratic";
-  }
-  if (!attributes.corporeal)
-  {
-      stream << " non-corporeal";
-  }
-  stream << endl;
-  stream << "Hitpoints: ";
-  hitpoints.print(stream);
-  stream << "Attack Damage: ";
-  damage.print(stream);
 }
 
 bool object_data::try_parse(std::istream& stream, object_data* object)
@@ -504,7 +523,7 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
       {
 	RepCheck(type);
 	stream >> next;
-	object->item_type = get_type(next);
+	object->type = get_type(next);
       }
       else if (!next.compare("COLOR"))
       {
@@ -635,7 +654,27 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
   return complete;
 }
 
-object_data::type object_data::get_type(string name)
+item* object_data::create() const
+{
+  item* i = new item((object_data*)this);
+  i->type = type;
+  i->name = name;
+  i->description = description;
+  i->colors = colors;
+  i->hitpoints = hitpoints;
+  i->damage = damage;
+  i->dodge = dodge;
+  i->defense = defense;
+  i->weight = weight;
+  i->speed = speed;
+  i->special = special;
+  i->value = value;
+  char table[] = { '|', ')', '}', '[', ']', '(', '{', '\\', '=', '\"', '_', '~', '?', '!', '$', '/', ',', '-', '%' };
+  i->symbol = table[type];
+  return i;
+}
+
+item_type object_data::get_type(string name)
 {
   if (!name.compare("WEAPON")) return  WEAPON;
   if (!name.compare("OFFHAND")) return OFFHAND;
@@ -656,10 +695,10 @@ object_data::type object_data::get_type(string name)
   if (!name.compare("FOOD")) return FOOD;
   if (!name.compare("WAND")) return WAND;
   if (!name.compare("CONTAINER")) return CONTAINER;
-  return (object_data::type)-1;
+  return (item_type)-1;
 }
 
-string object_data::get_type_name(object_data::type type)
+string object_data::get_type_name(item_type type)
 {
   switch (type)
   {
@@ -690,7 +729,7 @@ void object_data::print(ostream& stream) const
 {
   stream << "Name: " << name << endl;
   stream << "Descritpion: " << description << endl;
-  stream << "Type: " << get_type_name(item_type) << endl;
+  stream << "Type: " << get_type_name(type) << endl;
   stream << "Colors:";
   for (vector<int>::const_iterator it = colors.begin() ; it != colors.end(); ++it)
   {
@@ -707,42 +746,77 @@ void object_data::print(ostream& stream) const
   stream << "Value: " << value << endl;
 }
 
-int main()
+ostream& operator<<(ostream& stream, const object_data& obj)
+{
+  obj.print(stream);
+  return stream;
+}
+
+vector<monster_data> read_monsters()
 {
   ifstream file;
   string path(getenv("HOME"));
   path += "/.rlg327/monster_desc.txt";
-  cout << path << endl;
   file.open(path.c_str());
   vector<monster_data> monster_types;
   monster_data mcurrent;
   while (monster_data::try_parse(file, &mcurrent))
   {
     monster_types.push_back(mcurrent);
-    cout << "loaded monster # " << monster_types.size() << endl;
-  }
-  for (vector<monster_data>::iterator it = monster_types.begin() ; it != monster_types.end(); ++it)
-  {
-    cout << endl << endl;
-    it->print(cout);
   }
   file.close();
+  return monster_types;
+}
 
-  path = getenv("HOME");
+vector<object_data> read_objects()
+{
+  ifstream file;
+  string path(getenv("HOME"));
   path += "/.rlg327/object_desc.txt";
-  cout << path << endl;
   file.open(path.c_str());
   vector<object_data> object_types;
   object_data ocurrent;
   while (object_data::try_parse(file, &ocurrent))
   {
     object_types.push_back(ocurrent);
-    cout << "loaded object # " << object_types.size() << endl;
+  }
+  file.close();
+  return object_types;
+}
+/*
+int main()
+{
+  ifstream file;
+  string path(getenv("HOME"));
+  path += "/.rlg327/monster_desc.txt";
+  file.open(path.c_str());
+  vector<monster_data> monster_types;
+  monster_data mcurrent;
+  while (monster_data::try_parse(file, &mcurrent))
+  {
+    monster_types.push_back(mcurrent);
+  }
+  for (vector<monster_data>::iterator it = monster_types.begin() ; it != monster_types.end(); ++it)
+  {
+    cout << endl << endl;
+    cout << *it << endl;
+  }
+  file.close();
+
+  path = getenv("HOME");
+  path += "/.rlg327/object_desc.txt";
+  file.open(path.c_str());
+  vector<object_data> object_types;
+  object_data ocurrent;
+  while (object_data::try_parse(file, &ocurrent))
+  {
+    object_types.push_back(ocurrent);
   }
   file.close();
   for (vector<object_data>::iterator it = object_types.begin() ; it != object_types.end(); ++it)
   {
-    cout << endl << endl;
-    it->print(cout);
+    cout << endl;;
+    cout << *it << endl;
   }
 }
+*/

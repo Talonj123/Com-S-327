@@ -170,8 +170,8 @@ dungeon_t* load_dungeon(const char* name)
     }
     dungeon->pc = get_new_pc();
     point_t pc_loc = rect_center(dungeon->rooms[rand() % dungeon->num_rooms]);
-    set_character_loc((character_t*)dungeon->pc, pc_loc);
-    dungeon->characters[pc_loc.y][pc_loc.x] = ((character_t*)dungeon->pc);
+    set_character_loc((character*)dungeon->pc, pc_loc);
+    dungeon->characters[pc_loc.y][pc_loc.x] = ((character*)dungeon->pc);
 
     point_t up_stairs_loc = pc_loc;
     point_t down_stairs_loc;

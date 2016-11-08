@@ -1,7 +1,11 @@
 #ifndef _GENERATION_H_
 #define _GENERATION_H_
 
+typedef class monster_data monster_data;
+typedef class object_data object_data;
+
 #include "characters.h"
+#include "items.hpp"
 
 class dice
 {
@@ -13,7 +17,7 @@ private:
 public:
   dice(int base = 0, int num = 0, int sides = 0);
   int roll() const;
-  //operator int () const;
+  operator int () const;
 
   void print(std::ostream&) const;
 
@@ -37,21 +41,20 @@ private:
 public:
   monster_data() : symbol('?') {};
   static bool try_parse(std::istream&, monster_data*);
-  Monster create() const;
+  monster* create() const;
 
   void print(std::ostream&) const;
 
 };
 
+std::ostream& operator<<(std::ostream&, const monster_data&);
+
 class object_data
 {
-public:
-  typedef enum object_type
-  {WEAPON, OFFHAND, RANGED, ARMOR, HELMET, CLOAK, GLOVES, BOOTS, RING, AMULET, LIGHT, SCROLL, BOOK, FLASK, GOLD, AMMUNITION, FOOD, WAND, CONTAINER} type;
 private:
   std::string name;
   std::string description;
-  type item_type;
+  item_type type;
   std::vector<int> colors;
   dice hitpoints;
   dice damage;
@@ -63,15 +66,20 @@ private:
   dice value;
 
 public:
+  item* create() const;
   static bool try_parse(std::istream&, object_data*);
-  static object_data::type get_type(std::string name);
-  static std::string get_type_name(object_data::type type);
+  static item_type get_type(std::string name);
+  static std::string get_type_name(item_type type);
 
   void print(std::ostream&) const;
 };
 
+std::ostream& operator<<(std::ostream&, const object_data&);
 
 int get_color(std::string name);
 std::string get_color_name(int color);
+
+std::vector<monster_data> read_monsters();
+std::vector<object_data> read_objects();
 
 #endif //_GENERATION_H_

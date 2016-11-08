@@ -4,14 +4,18 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <vector>
 
 #include "dungeon/dungeons.h"
 #include "save.h"
 #include "pathfinding.h"
 #include "gameflow.h"
 #include "io.h"
+#include "generation.hpp"
+#include "items.hpp"
 #include <ncurses.h>
 
+using namespace std;
 
 int main(int argc, char *argv[])
 {
@@ -143,16 +147,18 @@ int main(int argc, char *argv[])
     }
   }
 
-  pc_t* pc = get_new_pc();
+  vector<monster_data> monsters = read_monsters();
+  vector<object_data> objects = read_objects();
+
+  player* pc = get_new_pc();
   set_pc(dungeon, pc);
   clear_pc_memory(pc);
 
   init_io();
-
-  print_dungeon(dungeon);
   
   add_pc_event(pc);
-  add_monsters(dungeon, num_monsters);
+  add_monsters(dungeon, monsters, num_monsters);
+  print_dungeon(dungeon);
   game_state.running = 1;
   game_state.quitted = 0;
   while (game_state.running)
@@ -165,7 +171,7 @@ int main(int argc, char *argv[])
       set_pc(dungeon, pc);
       clear_pc_memory(pc);
       add_pc_event(pc);
-      add_monsters(dungeon, num_monsters);
+      add_monsters(dungeon, monsters, num_monsters);
       game_state.reload = 0;
     }
     do_next_event(dungeon);

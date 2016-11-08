@@ -1,7 +1,8 @@
 #ifndef _CHARACTERS_H_
 # define _CHARACTERS_H_
-
 #include "dungeon/coordinates.h"
+
+#include <vector>
 
 typedef enum {
   PC, MONSTER
@@ -27,57 +28,55 @@ typedef struct
   tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
 } PlayerMemory;
 
-class character_t
+class character
 {
  public:
   char symbol;
+  std::vector<int> colors;
   point_t loc;
   int speed;
   bool alive;
   CharacterType type;
 };
 
-class pc_t : public character_t
+class player : public character
 {
  public:
-  character_t* target;
+  character* target;
   PlayerMemory memory;
 
   void UpdateMemory(dungeon_t* dungeon);
 };
 
-class monster_t : public character_t
+class monster : public character
 {
 public:
+  monster();
   monster_attributes_t attributes;
   point_t last_known_pc;
 };
 
-
-typedef class character_t Character;
-typedef class monster_t Monster;
-typedef class pc_t Player;
-  
 #include <stdlib.h>
 #include "dungeon/dungeons.h"
+#include "generation.hpp"
 
-  monster_t* get_new_monster();
-  pc_t* get_new_pc();
+  monster* get_new_monster();
+  player* get_new_pc();
 
-  void add_monsters(dungeon_t* dungeon, int num_monsters);
-  void add_pc_event(pc_t* pc);
-  char pc_try_move(dungeon_t* dungeon, pc_t* pc, int dx, int dy);
+void add_monsters(dungeon_t* dungeon, std::vector<monster_data> types, int num_monsters);
+  void add_pc_event(player* pc);
+  char pc_try_move(dungeon* dungeon, player* pc, int dx, int dy);
 
-  void set_character_loc(character_t* pc, point_t point);
+  void set_character_loc(character* pc, point_t point);
 
-  point_t get_character_loc(character_t* pc);
-  char get_character_symbol(character_t* character);
-  CharacterType get_character_type(character_t* character);
-  PlayerMemory get_pc_memory(pc_t* pc);
-  void clear_pc_memory(pc_t* pc);
+  point_t get_character_loc(character* character);
+  char get_character_symbol(character* character);
+  CharacterType get_character_type(character* character);
+  PlayerMemory get_pc_memory(player* pc);
+  void clear_pc_memory(player* pc);
 
-  void free_pc(pc_t* pc);
-  void free_character(character_t* pc);
+  void free_pc(player* pc);
+  void free_character(character* pc);
 
 #endif //_CHARACTERS_H_
 

@@ -57,7 +57,7 @@ void visit_tile_non_tunneling(dungeon_t* dungeon, PriorityQueue<point_t>& pqueue
 void get_distances_non_tunneling(dungeon_t* dungeon)
 {
   PriorityQueue<point_t> pqueue(compare_tile_dist_non_tunneling);
-  point_t loc = get_character_loc((character_t*)dungeon->pc);
+  point_t loc = get_character_loc((character*)dungeon->pc);
 
   DISTANCE(loc) = 0;
   pqueue.enqueue(loc);
@@ -137,7 +137,7 @@ void visit_tile_tunneling(dungeon_t* dungeon, PriorityQueue<point_t>& pqueue, in
 void get_distances_tunneling(dungeon_t* target)
 {
   PriorityQueue<point_t> pqueue(compare_tile_dist_tunneling);
-  point_t loc = get_character_loc((character_t*)dungeon->pc);
+  point_t loc = get_character_loc((character*)dungeon->pc);
   TUNNELING(loc) = 0;
   pqueue.enqueue(loc);
   while (!pqueue.empty())

@@ -4,7 +4,7 @@
 #include "characters.h"
 #include "dungeons.h"
 
-void pc_turn_interface(dungeon_t* dungeon, pc_t* pc);
+void pc_turn_interface(dungeon_t* dungeon, player* pc);
 void print_dungeon(dungeon_t* dungeon);
 void init_io();
 void end_io();

@@ -21,6 +21,8 @@
 #define TUNNELING_AT(point) dungeon->tunneling_distance_to_pc[point.y][point.x]
 #define CHARACTER dungeon->characters[r][c]
 #define CHARACTER_AT(point) dungeon->characters[point.y][point.x]
+#define ITEM dungeon->items[r][c]
+#define ITEM_AT(point) dungeon->items[point.y][point.x]
 
 #define DIJKSTRA_TURN_COST (50)
 #define DIJKSTRA_BASE_MOVE_COST (20)
@@ -146,6 +148,7 @@ dungeon_t* get_blank_dungeon()
       DISTANCE = numeric_limits<int>::max();
       TUNNELING = numeric_limits<int>::max();
       CHARACTER = NULL;
+      ITEM = NULL;
       /* Check for edge, if an edge tile, set to max hardness (100% hard, 0% breakable)
            otherwise, use a random value (assumes that RAND_MAX >> MAX_HARDNESS)
       */
@@ -471,7 +474,7 @@ void dungeon_free(dungeon_t* dungeon)
   free(dungeon);
 }
 
-void set_pc(dungeon_t* dungeon, pc_t* pc)
+void set_pc(dungeon* dungeon, player* pc)
 {
   if (dungeon->pc != NULL)
   {
@@ -497,8 +500,8 @@ void set_pc(dungeon_t* dungeon, pc_t* pc)
     }
   }
  BREAK:
-  set_character_loc((character_t*)pc, pc_loc);
-  CHARACTER_AT(pc_loc) = ((character_t*)dungeon->pc);
+  set_character_loc((character*)pc, pc_loc);
+  CHARACTER_AT(pc_loc) = ((character*)dungeon->pc);
 
   get_distances(dungeon);
 }

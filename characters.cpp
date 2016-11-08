@@ -20,43 +20,22 @@ game_state_t game_state;
 typedef struct monster_event
 {
   event_t base;
-  Monster* monster;
+  monster* target;
 
 } monster_event_t;
 
 typedef struct pc_event
 {
   event_t base;
-  Player* pc;
+  player* pc;
 
 } pc_event_t;
 
-Monster* get_new_monster()
+player* get_new_pc()
 {
-  Monster* monster = new Monster();
-  char attributes = rand()%32;
-  int speed = rand()%15 + 5;
-  //attributes = ERRATIC | TUNNELING;
-  monster->attributes.raw = attributes;
-  if (attributes < 0xA)
-  {
-    monster->symbol = '0' + attributes;
-  } else
-  {
-    monster->symbol = 'A' + attributes - 0xA;
-  }
-  monster->type = MONSTER;
-  monster->speed = speed;
-  monster->alive = 1;
-  monster->last_known_pc.x = 0;
-  monster->last_known_pc.y = 0;
-  return monster;
-}
-
-pc_t* get_new_pc()
-{
-  Player* pc = new Player();
+  player* pc = new player();
   pc->symbol = '@';
+  pc->colors.push_back(COLOR_WHITE);
   pc->speed = 10;
   pc->type = PC;
   pc->alive = 1;
@@ -72,7 +51,14 @@ pc_t* get_new_pc()
   return pc;
 }
 
-void move_character(dungeon_t* dungeon, Character* character, point_t nloc, char tunneling)
+monster::monster()
+{
+  alive = 1;
+  last_known_pc.x = 0;
+  last_known_pc.y = 0;
+}
+
+void move_character(dungeon_t* dungeon, character* character, point_t nloc, char tunneling)
 {
   if (dungeon->terrain[nloc.y][nloc.x] == WALL)
   {
@@ -101,11 +87,12 @@ void move_character(dungeon_t* dungeon, Character* character, point_t nloc, char
   }
   point_t loc = character->loc;
 
-  //Character* other = NULL;
+  //character* other = NULL;
   if (dungeon->characters[nloc.y][nloc.x] != NULL)
   {
-    Character* other = dungeon->characters[nloc.y][nloc.x];
-    other->alive = 0;
+    //character* that;
+    //    that = ;
+    dungeon->characters[nloc.y][nloc.x]->alive = 0;
     /* let the event handler clean it up */
     dungeon->num_characters--;
   }
@@ -114,7 +101,7 @@ void move_character(dungeon_t* dungeon, Character* character, point_t nloc, char
   character->loc = nloc;
 }
 
-char character_try_move_random(dungeon_t* dungeon, Character* character, char tunneling)
+char character_try_move_random(dungeon_t* dungeon, character* character, char tunneling)
 {
   int dx = (rand() % 3) - 1;
   int dy = (rand() % 3) - 1;
@@ -134,7 +121,7 @@ char character_try_move_random(dungeon_t* dungeon, Character* character, char tu
   return 1;
 }
 
-char has_los_to_pc(dungeon_t* dungeon, Monster* monster)
+char has_los_to_pc(dungeon_t* dungeon, monster* monster)
 {
   int room_num;
   for (room_num = 0; room_num < dungeon->num_rooms; room_num++)
@@ -150,7 +137,7 @@ char has_los_to_pc(dungeon_t* dungeon, Monster* monster)
 }
 
 
-void move_toward_pc_path(dungeon_t* dungeon, Monster* monster)
+void move_toward_pc_path(dungeon_t* dungeon, monster* monster)
 {
   int (*distance_map)[DUNGEON_ROWS][DUNGEON_COLS] = NULL;
   if (monster->attributes.tunneling && monster->attributes.intelligent)
@@ -183,7 +170,7 @@ void move_toward_pc_path(dungeon_t* dungeon, Monster* monster)
   move_character(dungeon, monster, nloc, monster->attributes.tunneling);
 }
 
-void move_toward_pc_line(dungeon_t* dungeon, Monster* monster)
+void move_toward_pc_line(dungeon_t* dungeon, monster* monster)
 {
   point_t pcloc = monster->last_known_pc;
   point_t monloc = monster->loc;
@@ -228,7 +215,7 @@ void move_toward_pc_line(dungeon_t* dungeon, Monster* monster)
 
 void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
-  Monster* monster = ((monster_event_t*)this_event)->monster;
+  monster* monster = ((monster_event_t*)this_event)->target;
   if (!monster->alive)
   {
     /* delete monster and  don't re-add event */
@@ -284,7 +271,7 @@ void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
   add_event((event_t*)this_event);
 }
 
-char pc_try_move(dungeon_t* dungeon, Player* pc, int dx, int dy)
+char pc_try_move(dungeon_t* dungeon, player* pc, int dx, int dy)
 {
   char tunneling = 0;
   point_t loc = pc->loc;
@@ -317,7 +304,7 @@ char pc_try_move(dungeon_t* dungeon, Player* pc, int dx, int dy)
 
   if (dungeon->characters[nloc.y][nloc.x] != NULL)
   {
-    Character* character = dungeon->characters[nloc.y][nloc.x];
+    character* character = dungeon->characters[nloc.y][nloc.x];
     character->alive = 0;
     /* let the event handler clean it up */
     dungeon->num_characters--;
@@ -330,7 +317,7 @@ char pc_try_move(dungeon_t* dungeon, Player* pc, int dx, int dy)
 
 void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
-  Player* pc = ((pc_event_t*)this_event)->pc;
+  player* pc = ((pc_event_t*)this_event)->pc;
   if (!pc->alive)
   {
     game_state.running = 0;
@@ -349,7 +336,7 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 void monster_cleanup(dungeon_t* dungeon, event_t* this_event)
 {
   monster_event_t* monster_event = ((monster_event_t*)this_event);
-  Monster* monster = monster_event->monster;
+  monster* monster = monster_event->target;
   point_t loc = monster->loc;
   dungeon->characters[loc.y][loc.x] = NULL;
   delete monster;
@@ -362,23 +349,23 @@ void pc_cleanup(dungeon_t* dungeon, event_t* this_event)
   free(this_event);
 }
 
-void free_pc(Player* pc)
+void free_pc(player* pc)
 {
   delete pc;
 }
 
-void free_character(Character* character)
+void free_character(character* character)
 {
   delete character;
 }
 
-void add_monsters(dungeon_t* dungeon, int num_monsters)
+void add_monsters(dungeon_t* dungeon, std::vector<monster_data> types, int num_monsters)
 {
   dungeon->num_characters += num_monsters;
   int i;
   for (i = 0; i < num_monsters; i++)
   {
-    Monster* monster = get_new_monster();
+    monster* monster = types[rand()%types.size()].create();
     while (1)
     {
       int r = rand() % DUNGEON_ROWS;
@@ -393,7 +380,7 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
 	((event_t*)event)->time = 100/monster->speed;
 	((event_t*)event)->run = monster_take_turn;
 	((event_t*)event)->cleanup = monster_cleanup;
-	event->monster = monster;
+	event->target = monster;
 	add_event((event_t*)event);
 	break;
       }
@@ -401,7 +388,7 @@ void add_monsters(dungeon_t* dungeon, int num_monsters)
   }
 }
 
-void add_pc_event(Player* pc)
+void add_pc_event(player* pc)
 {
   pc_event_t* pc_event = (pc_event_t*)malloc(sizeof(pc_event_t));
   ((event_t*)pc_event)->time = 0;
@@ -411,32 +398,32 @@ void add_pc_event(Player* pc)
   add_event((event_t*)pc_event);
 }
 
-void set_character_loc(Character* character, point_t point)
+void set_character_loc(character* character, point_t point)
 {
   character->loc = point;
 }
 
-char get_character_symbol(Character* character)
+char get_character_symbol(character* character)
 {
   return character->symbol;
 }
 
-point_t get_character_loc(Character* character)
+point_t get_character_loc(character* character)
 {
   return character->loc;
 }
 
-CharacterType get_character_type(Character* character)
+CharacterType get_character_type(character* character)
 {
   return character->type;
 }
 
-PlayerMemory get_pc_memory(Player* pc)
+PlayerMemory get_pc_memory(player* pc)
 {
   return pc->memory;
 }
 
-void Player::UpdateMemory(dungeon_t* dungeon)
+void player::UpdateMemory(dungeon_t* dungeon)
 {
   int dy, dx;
   for (dy = -3; dy <= 3; dy++)
@@ -452,7 +439,7 @@ void Player::UpdateMemory(dungeon_t* dungeon)
   }
 }
 
-void clear_pc_memory(Player* pc)
+void clear_pc_memory(player* pc)
 {
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
