@@ -48,12 +48,15 @@ class player : public character
   void UpdateMemory(dungeon_t* dungeon);
 };
 
+#include "dice.hpp"
+
 class monster : public character
 {
 public:
   monster();
   monster_attributes_t attributes;
   point_t last_known_pc;
+  dice damage;
 };
 
 #include <stdlib.h>

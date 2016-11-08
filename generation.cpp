@@ -402,6 +402,7 @@ monster* monster_data::create() const
   monster->type = MONSTER;
   monster->attributes = attributes;
   monster->colors = vector<int>(colors);
+  monster->damage = damage;
   return monster;
 }
 
