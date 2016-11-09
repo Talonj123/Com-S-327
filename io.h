@@ -2,7 +2,7 @@
 # define _IO_H_
 
 #include "characters.h"
-#include "dungeons.h"
+#include "dungeons.hpp"
 
 void pc_turn_interface(dungeon_t* dungeon, player* pc);
 void print_dungeon(dungeon_t* dungeon);

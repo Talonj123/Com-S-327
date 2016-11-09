@@ -30,7 +30,7 @@ void monster_list_interface(dungeon_t* dungeon)
       }
     }
   }
-  point_t loc = get_character_loc((character*)dungeon->pc);
+  point_t loc = get_character_loc((character*)dungeon->get_pc());
   char **lines = (char**)malloc(sizeof(char*)*num_monsters);
   for (i = 0; i < num_monsters; i++)
   {
@@ -130,7 +130,33 @@ void pc_turn_interface(dungeon_t* dungeon, player* pc)
   print_dungeon(dungeon);
   
   point_t loc = get_character_loc((character*)pc);
+  
+  if (dungeon->items[loc.y][loc.x] != NULL)
+  {
+    item* item = dungeon->items[loc.y][loc.x];
+    if (item->get_name().length() > 30)
+    {
+      mvprintw(21, 0, (item->get_name().substr(0, 27) + "...").c_str());
+    }
+    else
+    {
+      mvprintw(21, 0, item->get_name().c_str());
+    }
 
+    if (item->get_description().length() > 80)
+    {
+      mvprintw(22, 0, (item->get_description().substr(0, 77) + "...").c_str());
+    }
+    else
+    {
+      mvprintw(22, 0, item->get_description().c_str());
+    }
+  }
+  else
+  {
+    mvprintw(21, 0, "          ""          ""          ""          ""          ""          ""          ""          ");
+    mvprintw(22, 0, "          ""          ""          ""          ""          ""          ""          ""          ");
+  }
   /*
   int r, c, num = 0;
   for (r = 0; r < DUNGEON_ROWS; r++)
@@ -253,8 +279,8 @@ GETCHAR_LBL:
 
 void print_dungeon(dungeon_t* dungeon)
 {
-  PlayerMemory memory = get_pc_memory(dungeon->pc);
-  point_t loc = get_character_loc((character*)dungeon->pc);
+  const PlayerMemory memory = get_pc_memory(dungeon->get_pc());
+  point_t loc = get_character_loc((character*)dungeon->get_pc());
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {

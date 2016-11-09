@@ -8,8 +8,13 @@
 
 typedef unsigned char hardness_t;
 
-struct dungeon
+class dungeon
 {
+  friend void init_dungeon(dungeon_t*);
+private:  
+  player* pc;
+
+public:
   hardness_t hardness[DUNGEON_ROWS][DUNGEON_COLS];
   tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
   int distance_to_pc[DUNGEON_ROWS][DUNGEON_COLS];
@@ -20,13 +25,11 @@ struct dungeon
   int num_rooms;
   int num_characters;
   
-  player* pc;
-  
-};
+  void set_pc(player* pc);
+  player* get_pc();
 
-//dungeon_t* get_blank_dungeon(int rows, int cols);
-dungeon_t* dungeon_new();
-void dungeon_free(dungeon* dungeon);
-void set_pc(dungeon* dungeon, player* pc);
+  dungeon(bool initMap = false);
+  ~dungeon();
+};
 
 #endif //_DUNGEONS_H_

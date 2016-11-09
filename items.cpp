@@ -88,7 +88,8 @@ void add_items(dungeon* dungeon, const std::vector<object_data> templates)
     {
       r = rand() % DUNGEON_ROWS;
       c = rand() % DUNGEON_COLS;
-    } while (dungeon->hardness[r][c] != 0 || dungeon->items[r][c] != NULL);
+    } while (dungeon->terrain[r][c] != FLOOR ||
+	     dungeon->items[r][c] != NULL);
     dungeon->items[r][c] = itm;
   }
 }

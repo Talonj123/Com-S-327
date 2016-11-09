@@ -1,7 +1,7 @@
 #ifndef _GAMEFLOW_H_
 #define _GAMEFLOW_H_
 
-#include "dungeon/dungeons.h"
+#include "dungeon/dungeons.hpp"
 
 typedef struct game_state
 {

@@ -29,7 +29,7 @@ clean: clean_general
 	cd dungeon; make clean
 
 #dependancies
-dungeons.a: dungeon/dungeons.cpp dungeon/coordinates.cpp dungeon/dungeons_private.h dungeon/dungeon_independant.h dungeon/dungeons.h dungeon/coordinates.h pqueue.hpp
+dungeons.a: dungeon/dungeons.cpp dungeon/coordinates.cpp dungeon/dungeons_private.h dungeon/dungeon_independant.h dungeon/dungeons.hpp dungeon/coordinates.h pqueue.hpp
 	cd dungeon; make  dungeons.a;
 	ld -r -o $@ dungeon/dungeons.a
 

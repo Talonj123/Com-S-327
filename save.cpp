@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "dungeon/dungeons.h"
+#include "dungeon/dungeons.hpp"
 
 #include "dungeon/coordinates.h"
 
@@ -129,7 +129,7 @@ dungeon_t* load_dungeon(const char* name)
     version = be32toh(version);
     size = be32toh(size);
     
-    dungeon = (dungeon_t*)malloc(sizeof(dungeon_t));
+    dungeon = new ::dungeon(false);
     fread(dungeon->hardness, 1, DUNGEON_ROWS * DUNGEON_COLS, file);
     int r, c;
     for (r = 0; r < DUNGEON_ROWS; r++)
@@ -168,10 +168,7 @@ dungeon_t* load_dungeon(const char* name)
 	}	
       }
     }
-    dungeon->pc = get_new_pc();
     point_t pc_loc = rect_center(dungeon->rooms[rand() % dungeon->num_rooms]);
-    set_character_loc((character*)dungeon->pc, pc_loc);
-    dungeon->characters[pc_loc.y][pc_loc.x] = ((character*)dungeon->pc);
 
     point_t up_stairs_loc = pc_loc;
     point_t down_stairs_loc;
@@ -183,7 +180,6 @@ dungeon_t* load_dungeon(const char* name)
     
     dungeon->terrain[up_stairs_loc.y][up_stairs_loc.x] = UP_STAIR;
     dungeon->terrain[down_stairs_loc.y][down_stairs_loc.x] = DOWN_STAIR;
-
     fclose(file); 
   }
   free(expanded);

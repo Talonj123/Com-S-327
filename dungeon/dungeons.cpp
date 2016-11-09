@@ -128,10 +128,9 @@ void soften(dungeon_t* dungeon)
 /* Generates a dungeon of the given size, filled with walls
  *   with random hardnesses, but the borders are 100% solid
  */
-dungeon_t* get_blank_dungeon()
+void init_dungeon(dungeon_t* dungeon)
 {
   /* freed by client */
-  dungeon_t* dungeon = (dungeon_t*)malloc(sizeof(dungeon_t));
   dungeon->num_rooms = 0;
   dungeon->num_characters = 0;
   dungeon->rooms = NULL;
@@ -180,7 +179,6 @@ dungeon_t* get_blank_dungeon()
   diffuse(dungeon, domains);
 
   soften(dungeon);
-  return dungeon;
 }
 
 /* returns non-zero if the room colnd not be placed */
@@ -360,14 +358,43 @@ void link_rooms(dungeon_t* dungeon)
   }
 }
 
-dungeon_t* dungeon_new()
+player* dungeon::get_pc()
 {
-  dungeon_t* dungeon;
+  return pc;
+}
+
+dungeon::dungeon(bool initMap)
+{
+  pc = NULL;
+  if (!initMap)
+  {
+    // do thin initialization
+    /* freed by client */
+    num_rooms = 0;
+    num_characters = 0;
+    rooms = NULL;
+    pc = NULL;
+    
+    int r, c;
+    for (r = 0; r < DUNGEON_ROWS; r++)
+    {
+      for (c = 0; c < DUNGEON_COLS; c++)
+      {
+        terrain[r][c] = WALL;
+	distance_to_pc[r][c] = numeric_limits<int>::max();
+        tunneling_distance_to_pc[r][c] = numeric_limits<int>::max();
+	characters[r][c] = NULL;
+	items[r][c] = NULL;    
+	hardness[r][c] = (MAX_HARDNESS + MIN_HARDNESS) / 2;
+      }
+    }
+    return;
+  }
   /* it is very uncommon to have < 7 rooms, so this loop should run twice at most */
   while (1)
   {
     //TODO:
-    dungeon = get_blank_dungeon();
+    init_dungeon(this);
     /* reduce for sparser dungeons */
     int max_fails = 500;
     int fails = 0;
@@ -382,9 +409,8 @@ dungeon_t* dungeon_new()
     int max_width = DUNGEON_COLS/6;
     int max_height = DUNGEON_ROWS/6;
     int rooms_created = 0;
-    dungeon->num_rooms = NUM_ROOMS;
-    dungeon->rooms = (rectangle_t*)malloc(sizeof(rectangle_t)*NUM_ROOMS);
-
+    num_rooms = NUM_ROOMS;
+    rooms = (rectangle_t*)malloc(sizeof(rectangle_t)*NUM_ROOMS);
     while (rooms_created < NUM_ROOMS)
     {
       rectangle_t bounds;
@@ -418,80 +444,81 @@ dungeon_t* dungeon_new()
 	}
       } while (ar >= 1.5);
       
-      if (place_rect_room(dungeon, bounds))
+      if (place_rect_room(this, bounds))
       {
 	i--;
 	fails++;
 	if (fails >= max_fails)
 	{
 	  break;
+	  free(rooms);
 	}
       }
       else
       {
 	rectangle_t actual = {bounds.x + 2, bounds.y + 2, bounds.width - 4, bounds.height - 4};
-	dungeon->rooms[rooms_created++] = actual;
+	rooms[rooms_created++] = actual;
 	fails = 0;
       }
     }
 
-    point_t up_stairs_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
+    point_t up_stairs_loc = rect_center(rooms[rand() % rooms_created]);
     point_t down_stairs_loc;
 
     do
     {
-      down_stairs_loc = rect_center(dungeon->rooms[rand() % rooms_created]);
+      down_stairs_loc = rect_center(rooms[rand() % rooms_created]);
     } while (up_stairs_loc.x == down_stairs_loc.x && down_stairs_loc.y == down_stairs_loc.y);
 
-    TERRAIN_AT(up_stairs_loc) = UP_STAIR;
-    TERRAIN_AT(down_stairs_loc) = DOWN_STAIR;
+    terrain[up_stairs_loc.y][up_stairs_loc.x] = UP_STAIR;
+    terrain[down_stairs_loc.y][down_stairs_loc.y] = DOWN_STAIR;
     
     if (rooms_created >= NUM_ROOMS)
     {
       break;
     }
-    dungeon_free(dungeon);
   }
 
-  link_rooms(dungeon);
- 
- return dungeon;
+  link_rooms(this);
 }
-void dungeon_free(dungeon_t* dungeon)
+dungeon::~dungeon()
 {
   int r, c;
   for (r = 1; r < DUNGEON_ROWS - 1; r++)
   {
     for (c = 1; c < DUNGEON_COLS - 1; c++)
     {
-      if (CHARACTER != NULL && CHARACTER->type != PC)
+      if (characters[r][c] != NULL &&
+	  characters[r][c]->type != PC)
       {
-	free_character(CHARACTER);
+	delete characters[r][c];
+      }
+      if (items[r][c] != NULL)
+      {
+	delete items[r][c];
       }
     }
   }
-  free(dungeon->rooms);
-  free(dungeon);
+  free(rooms);
 }
 
-void set_pc(dungeon* dungeon, player* pc)
+void dungeon::set_pc(player* pc)
 {
-  if (dungeon->pc != NULL)
+  if (this->pc != NULL)
   {
-    dungeon->num_characters--;
-    free_pc(dungeon->pc);
+    num_characters--;
   }  
 
-  dungeon->pc = pc;
-  dungeon->num_characters++;
+  this->pc = pc;
+  num_characters++;
 
   int r, c;
-  point_t pc_loc;
+  point_t pc_loc = {-1, -1};
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
     {
-      if (dungeon->terrain[r][c] == UP_STAIR)
+      if (terrain[r][c] == UP_STAIR)
       {
 	pc_loc.x = c;
 	pc_loc.y = r;
@@ -499,9 +526,15 @@ void set_pc(dungeon* dungeon, player* pc)
       }
     }
   }
+  {
+    rectangle_t target = rooms[rand() % num_rooms];
+    printf("(%d, %d, %d, %d)\r\n", target.x, target.y, target.width, target.height);
+  
+    pc_loc = rect_center(target);
+  }
  BREAK:
-  set_character_loc((character*)pc, pc_loc);
-  CHARACTER_AT(pc_loc) = ((character*)dungeon->pc);
+  pc->loc = pc_loc;
+  characters[pc_loc.y][pc_loc.x] = pc;
 
-  get_distances(dungeon);
+  get_distances(this);
 }

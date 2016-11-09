@@ -48,6 +48,7 @@ class player : public character
   PlayerMemory memory;
 
   void UpdateMemory(dungeon_t* dungeon);
+  void clear_memory();
 };
 
 #include "dice.hpp"
@@ -62,7 +63,7 @@ public:
 };
 
 #include <stdlib.h>
-#include "dungeon/dungeons.h"
+#include "dungeon/dungeons.hpp"
 #include "generation.hpp"
 
   monster* get_new_monster();

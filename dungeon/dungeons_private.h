@@ -1,7 +1,7 @@
 #ifndef _DUNGEONS_PRIVATE_H_
 #define _DUNGEONS_PRIVATE_H_
 
-#include "dungeons.h"
+#include "dungeons.hpp"
 
 typedef struct tile_dijkstra_t tile_dijkstra_t;
 struct tile_dijkstra_t

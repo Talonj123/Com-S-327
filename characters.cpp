@@ -127,7 +127,7 @@ char has_los_to_pc(dungeon_t* dungeon, monster* monster)
   for (room_num = 0; room_num < dungeon->num_rooms; room_num++)
   {
     rectangle_t room = dungeon->rooms[room_num];
-    if (rect_contains_point(room, dungeon->pc->loc)
+    if (rect_contains_point(room, dungeon->get_pc()->loc)
 	&& rect_contains_point(room, monster->loc))
     {
       return 1;
@@ -227,11 +227,11 @@ void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
 
   if (monster->attributes.telepathic)
   {
-    monster->last_known_pc = dungeon->pc->loc;
+    monster->last_known_pc = dungeon->get_pc()->loc;
   }
   else if (has_los_to_pc(dungeon, monster))
   {
-    monster->last_known_pc = dungeon->pc->loc;
+    monster->last_known_pc = dungeon->get_pc()->loc;
   }
   else if (!monster->attributes.intelligent)
   {
@@ -440,14 +440,15 @@ void player::UpdateMemory(dungeon_t* dungeon)
   }
 }
 
-void clear_pc_memory(player* pc)
+void player::clear_memory()
 {
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
     {
-      pc->memory.terrain[r][c] = WALL;
+      memory.terrain[r][c] = WALL;
+      memory.items[r][c] = NULL;
     }
   }
 }

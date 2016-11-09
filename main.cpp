@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <vector>
 
-#include "dungeon/dungeons.h"
+#include "dungeon/dungeons.hpp"
 #include "save.h"
 #include "pathfinding.h"
 #include "gameflow.h"
@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
   if (load)
   {
     dungeon = load_dungeon(load_name);
+    printf("NumRooms: %d\r\n", dungeon->num_rooms);
     if (dungeon == NULL)
     {
       printf("dungeon not loaded: file does not exist (\"%s\")\n", load_name);
@@ -132,7 +133,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    dungeon = dungeon_new();
+    dungeon = new ::dungeon(true);
   }
 
   if (save)
@@ -152,8 +153,8 @@ int main(int argc, char *argv[])
   vector<object_data> objects = read_objects();
 
   player* pc = get_new_pc();
-  set_pc(dungeon, pc);
-  clear_pc_memory(pc);
+  dungeon->set_pc(pc);
+  pc->clear_memory();
 
   init_io();
   
@@ -168,10 +169,10 @@ int main(int argc, char *argv[])
     if (game_state.reload)
     {
       clear_events(dungeon);
-      dungeon_free(dungeon);
-      dungeon = dungeon_new();
-      set_pc(dungeon, pc);
-      clear_pc_memory(pc);
+      delete dungeon;
+      dungeon = new ::dungeon(true);
+      dungeon->set_pc(pc);
+      pc->clear_memory();
       add_pc_event(pc);
       add_monsters(dungeon, monsters, num_monsters);
       add_items(dungeon, objects);
@@ -193,8 +194,8 @@ int main(int argc, char *argv[])
   }
 
   clear_events(dungeon);
-  dungeon_free(dungeon);
-  free_pc(pc);
+  delete dungeon;
+  delete pc;
   getch();
   
   end_io();
