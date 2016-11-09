@@ -434,6 +434,7 @@ void player::UpdateMemory(dungeon_t* dungeon)
 	  loc.x + dx >= 0 && loc.x + dx < DUNGEON_COLS)
       {
 	memory.terrain[loc.y+dy][loc.x+dx] = dungeon->terrain[loc.y+dy][loc.x+dx];
+	memory.items[loc.y+dy][loc.x+dx] = dungeon->items[loc.y+dy][loc.x+dx];
       }
     }
   }

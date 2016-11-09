@@ -1,6 +1,7 @@
 #ifndef _CHARACTERS_H_
 # define _CHARACTERS_H_
 #include "dungeon/coordinates.h"
+#include "items.hpp"
 
 #include <vector>
 
@@ -26,6 +27,7 @@ typedef union monster_attributes
 typedef struct
 {
   tile_type terrain[DUNGEON_ROWS][DUNGEON_COLS];
+  item* items[DUNGEON_ROWS][DUNGEON_COLS];
 } PlayerMemory;
 
 class character

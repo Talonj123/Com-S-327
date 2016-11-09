@@ -2,6 +2,7 @@
 #include "gameflow.h"
 #include "pathfinding.h"
 #include "io.h"
+#include "items.hpp"
 
 #include <limits.h>
 #include <unistd.h>
@@ -9,6 +10,8 @@
 #include <string.h>
 #include <math.h>
 #include <ncurses.h>
+
+void init_color_pairs();
 
 void monster_list_interface(dungeon_t* dungeon)
 {
@@ -253,11 +256,12 @@ void print_dungeon(dungeon_t* dungeon)
   PlayerMemory memory = get_pc_memory(dungeon->pc);
   point_t loc = get_character_loc((character*)dungeon->pc);
   int r, c;
-  for (r = 0; r < 21; r++)
+  for (r = 0; r < DUNGEON_ROWS; r++)
   {
-    for (c = 0; c < 80; c++)
+    for (c = 0; c < DUNGEON_COLS; c++)
     {
       tile_type tile = memory.terrain[r][c];
+      item* item = memory.items[r][c];
       //tile_type tile = dungeon->terrain[r][c];
       char ch = ' ';
       int color = COLOR_WHITE;
@@ -266,6 +270,11 @@ void print_dungeon(dungeon_t* dungeon)
 	character* character = dungeon->characters[r][c];
         ch = get_character_symbol(character);
 	color = character->colors[0];
+      }
+      else if (item != NULL)
+      {
+	ch = item->get_symbol();
+	color = item->get_colors()[0];
       }
       else if (tile == WALL)
       {
@@ -303,6 +312,11 @@ void init_io()
   noecho();
   set_escdelay(100);
   start_color();
+  init_color_pairs();
+}
+
+void init_color_pairs()
+{
   init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
   init_pair(COLOR_BLACK, COLOR_BLACK, COLOR_BLACK);
   init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);

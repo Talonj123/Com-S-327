@@ -1,4 +1,5 @@
 #include "items.hpp"
+#include "generation.hpp"
 
 item::item(const object_data* source_data) : source(*source_data)
 {
@@ -35,7 +36,7 @@ int item::get_hitpoints() const
   return hitpoints;
 }
 
-int item::get_damage() const
+dice item::get_damage() const
 {
   return damage;
 }
@@ -74,3 +75,21 @@ char item::get_symbol() const
 {
   return symbol;
 }
+
+
+void add_items(dungeon* dungeon, const std::vector<object_data> templates)
+{
+  int i;
+  for (i = 0; i < 10; i++)
+  {
+    item* itm = templates[rand() % templates.size()].create();
+    int r, c;
+    do
+    {
+      r = rand() % DUNGEON_ROWS;
+      c = rand() % DUNGEON_COLS;
+    } while (dungeon->hardness[r][c] != 0 || dungeon->items[r][c] != NULL);
+    dungeon->items[r][c] = itm;
+  }
+}
+

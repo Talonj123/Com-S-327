@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "dice.hpp"
+#include "dungeon/dungeon_independant.h"
+
 typedef class object_data object_data;
 
 typedef enum item_type
@@ -20,7 +23,7 @@ private:
   std::string description;
   std::vector<int> colors;
   int hitpoints;
-  int damage;
+  dice damage;
   int dodge;
   int defense;
   int weight;
@@ -37,7 +40,7 @@ public:
   std::string get_description() const;
   std::vector<int> get_colors() const;
   int get_hitpoints() const;
-  int get_damage() const;
+  dice get_damage() const;
   int get_dodge() const;
   int get_defense() const;
   int get_weight() const;
@@ -47,5 +50,7 @@ public:
   char get_symbol() const;
 
 };
+
+void add_items(dungeon*, const std::vector<object_data>);
 
 #endif //_ITEMS_HPP_

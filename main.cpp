@@ -13,6 +13,7 @@
 #include "io.h"
 #include "generation.hpp"
 #include "items.hpp"
+#include "items.hpp"
 #include <ncurses.h>
 
 using namespace std;
@@ -158,6 +159,7 @@ int main(int argc, char *argv[])
   
   add_pc_event(pc);
   add_monsters(dungeon, monsters, num_monsters);
+  add_items(dungeon, objects);
   print_dungeon(dungeon);
   game_state.running = 1;
   game_state.quitted = 0;
@@ -172,6 +174,7 @@ int main(int argc, char *argv[])
       clear_pc_memory(pc);
       add_pc_event(pc);
       add_monsters(dungeon, monsters, num_monsters);
+      add_items(dungeon, objects);
       game_state.reload = 0;
     }
     do_next_event(dungeon);

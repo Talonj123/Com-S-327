@@ -3,9 +3,8 @@
 
 #include "coordinates.h"
 #include "../characters.h"
-#include "../items.hpp"
 #include "dungeon_independant.h"
-
+#include "../items.hpp"
 
 typedef unsigned char hardness_t;
 
