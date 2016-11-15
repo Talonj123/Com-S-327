@@ -1,6 +1,26 @@
 # Change Log
+## 2016-11-9
+# Additions
+ - Added items to the dungeon and PC memory
+ - Added item name/description popup when over an item
+# Fixes
+ - Memory errors
+
+## 2016-11-8
+# Changes
+ - Generating monsters from templates
+
+## 2016-11-7
+# Changes
+- Made the dungeon a C++ class.
+
+## 2016-11-6
+# Additions
+ - Added Object parsing
+
 ## 2016-11-2
- - Added monster parsing
+# Additions
+- Added monster parsing
 
 ## 2016-10-31
 # Changes

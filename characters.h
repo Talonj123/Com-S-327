@@ -33,22 +33,34 @@ typedef struct
 class character
 {
  public:
+  character();
+  character(char symb, int spd, CharacterType typ, int hp);
   char symbol;
   std::vector<int> colors;
   point_t loc;
   int speed;
   bool alive;
   CharacterType type;
+  dice damage;
+  int hitpoints;
+  int hitpoints_max;
 };
 
 class player : public character
 {
  public:
-  character* target;
+  player();
+  ~player();
   PlayerMemory memory;
 
   void UpdateMemory(dungeon_t* dungeon);
   void clear_memory();
+
+  item *carry[10];
+  item *equipment[12];
+
+  void equip(int carry_index, int ring_hand = 0);
+  void unequip(int equipment_index);
 };
 
 #include "dice.hpp"
@@ -59,7 +71,6 @@ public:
   monster();
   monster_attributes_t attributes;
   point_t last_known_pc;
-  dice damage;
 };
 
 #include <stdlib.h>

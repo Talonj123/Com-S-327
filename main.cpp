@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 
   char load = 0;
   char save = 0;
-  char num_monsters = 5;
+  char num_monsters = 5, num_items = 10;
   int args_processed = 1;
   char* load_name = (char*)"dungeon.rlg327";
   char free_load_name = 0;
@@ -41,6 +41,18 @@ int main(int argc, char *argv[])
 	if (new_num >= 0)
 	{
 	  num_monsters = new_num;
+	}
+	args_processed++;
+      }
+    }
+    else if (!strcmp("--numitm", argv[args_processed]))
+    {
+      if (argc > args_processed + 1)
+      {
+	int new_num = atoi(argv[args_processed + 1]);
+	if (new_num >= 0)
+	{
+	  num_items = new_num;
 	}
 	args_processed++;
       }
@@ -152,15 +164,15 @@ int main(int argc, char *argv[])
   vector<monster_data> monsters = read_monsters();
   vector<object_data> objects = read_objects();
 
+  init_io();
+
   player* pc = get_new_pc();
   dungeon->set_pc(pc);
   pc->clear_memory();
-
-  init_io();
   
   add_pc_event(pc);
   add_monsters(dungeon, monsters, num_monsters);
-  add_items(dungeon, objects);
+  add_items(dungeon, objects, num_items);
   print_dungeon(dungeon);
   game_state.running = 1;
   game_state.quitted = 0;
@@ -175,7 +187,7 @@ int main(int argc, char *argv[])
       pc->clear_memory();
       add_pc_event(pc);
       add_monsters(dungeon, monsters, num_monsters);
-      add_items(dungeon, objects);
+      add_items(dungeon, objects, num_items);
       game_state.reload = 0;
     }
     do_next_event(dungeon);

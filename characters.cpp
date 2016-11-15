@@ -31,15 +31,111 @@ typedef struct pc_event
 
 } pc_event_t;
 
+character::character() : alive(true)
+{
+}
+
+character::character(char symb, int spd, CharacterType typ, int hp) : symbol(symb), speed(spd), alive(true), type(typ), hitpoints_max(hp)
+{
+}
+
+player::player() : character('@', 10, PC, 100)
+{
+  colors.push_back(COLOR_WHITE);
+  hitpoints = hitpoints_max;
+  damage = dice(0, 1, 4);
+  unsigned int i;
+  for (i = 0; i < 10; i++)
+  {
+    carry[i] = NULL;
+  }
+  for (i = 0; i < 12; i++)
+  {
+    equipment[i] = NULL;
+  }
+}
+
+player::~player()
+{
+  int i;
+  for (i = 0; i < 10; i++)
+  {
+    delete carry[i];
+  }
+  for (i = 0; i < 12; i++)
+  {
+    delete equipment[i];
+  }
+}
+
+void player::equip(int carry_index, int ring_hand)
+{
+  item *new_item = carry[carry_index];
+  if (new_item == NULL)
+  {
+    return;
+  }
+  item_type type = new_item->get_type();
+  int equip_index;
+  switch (type)
+  {
+  default:
+    return;
+  case WEAPON:
+    equip_index = 0;
+    break;
+  case OFFHAND:
+    equip_index = 1;
+    break;
+  case RANGED:
+    equip_index = 2;
+    break;
+  case ARMOR:
+    equip_index = 3;
+    break;
+  case HELMET:
+    equip_index = 4;
+    break;
+  case CLOAK:
+    equip_index = 5;
+    break;
+  case GLOVES:
+    equip_index = 6;
+    break;
+  case BOOTS:
+    equip_index = 7;
+    break;
+  case AMULET:
+    equip_index = 8;
+    break;
+  case LIGHT:
+    equip_index = 9;
+    break;
+  case RING:
+    equip_index = 10 + (ring_hand ? 1 : 0);
+    break;
+  }
+  carry[carry_index] = equipment[equip_index];
+  equipment[equip_index] = new_item;
+}
+
+void player::unequip(int equipment_index)
+{
+  int i;
+  for (i = 0; i < 10; i++)
+  {
+    if (carry[i] == NULL)
+    {
+      break;
+    }
+  }
+  carry[i] = equipment[equipment_index];
+  equipment[equipment_index] = NULL;
+}
+
 player* get_new_pc()
 {
   player* pc = new player();
-  pc->symbol = '@';
-  pc->colors.push_back(COLOR_WHITE);
-  pc->speed = 10;
-  pc->type = PC;
-  pc->alive = 1;
-  pc->target = NULL;
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
@@ -53,7 +149,6 @@ player* get_new_pc()
 
 monster::monster()
 {
-  alive = 1;
   last_known_pc.x = 0;
   last_known_pc.y = 0;
 }
@@ -92,7 +187,7 @@ void move_character(dungeon_t* dungeon, character* character, point_t nloc, char
   {
     //character* that;
     //    that = ;
-    dungeon->characters[nloc.y][nloc.x]->alive = 0;
+    dungeon->characters[nloc.y][nloc.x]->alive = false;
     /* let the event handler clean it up */
     dungeon->num_characters--;
   }
@@ -305,7 +400,7 @@ char pc_try_move(dungeon_t* dungeon, player* pc, int dx, int dy)
   if (dungeon->characters[nloc.y][nloc.x] != NULL)
   {
     character* character = dungeon->characters[nloc.y][nloc.x];
-    character->alive = 0;
+    character->alive = false;
     /* let the event handler clean it up */
     dungeon->num_characters--;
   }
@@ -328,7 +423,59 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
   pc->UpdateMemory(dungeon);
 
   pc_turn_interface(dungeon, pc);
+  if (dungeon->items[pc->loc.y][pc->loc.x] != NULL)
+  {
+    item* item = dungeon->items[pc->loc.y][pc->loc.x];
+    bool has_empty = false;
+    unsigned int i;
+    for (i = 0; i < sizeof(pc->carry)/sizeof(pc->carry[0]); i++)
+    {
+      if (pc->carry[i] == NULL)
+      {
+	has_empty = true;
+	break;
+      }
+    }
+    if (has_empty)
+    {
+      pc->carry[i] = item;
+      dungeon->items[pc->loc.y][pc->loc.x] = NULL;
+      mvprintw(22, 0, "Picked up ");
+      if (item->get_name().length() > 30)
+      {
+	mvprintw(22, 10, (item->get_name().substr(0, 27) + "...""          ""          ""          ""          ""          ").c_str());
+      }
+      else
+      {
+	mvprintw(22, 10, (item->get_name() + "         ""         ""         ""         ""         ""         ""         ").c_str());
+      }
+    }
+    else
+    {
+      if (item->get_name().length() > 30)
+      {
+	mvprintw(22, 0, (item->get_name().substr(0, 27) + "...").c_str());
+      }
+      else
+      {
+	mvprintw(22, 0, item->get_name().c_str());
+      }
+    }
 
+    if (item->get_description().length() > 80)
+    {
+      mvprintw(23, 0, (item->get_description().substr(0, 77) + "...").c_str());
+    }
+    else
+    {
+      mvprintw(23, 0, item->get_description().c_str());
+    }
+  }
+  else
+  {
+    mvprintw(22, 0, "          ""          ""          ""          ""          ""          ""          ""          ");
+    mvprintw(23, 0, "          ""          ""          ""          ""          ""          ""          ""          ");
+  }
   this_event->time += 100/pc->speed;
   add_event(this_event);
 }

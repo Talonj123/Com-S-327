@@ -1,3 +1,5 @@
+//#define STANDALONE
+
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
@@ -73,6 +75,11 @@ bool dice::parse(istream& stream, dice* target)
   int sides = value;
   *target = dice(base, num, sides);
   return true;
+}
+
+bool operator>>(istream& stream, dice& d)
+{
+  return !dice::parse(stream, &d);
 }
 
 void dice::print(ostream& stream) const
@@ -252,7 +259,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	{
 	  stream.get();
 	}
-	error |= !dice::parse(stream, &monster->speed);
+	error |= stream >> monster->speed;
       }
       else if (!next.compare("DAM"))
       {
@@ -266,7 +273,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	{
 	  stream.get();
 	}
-	error |= !dice::parse(stream, &monster->damage);
+	error |= stream >> monster->damage;
       }
       else if (!next.compare("HP"))
       {
@@ -280,7 +287,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	{
 	  stream.get();
 	}
-	error |= !dice::parse(stream, &monster->hitpoints);
+	error |= stream >> monster->hitpoints;
       }
       else if (!next.compare("ABIL"))
       {
@@ -357,8 +364,7 @@ void monster_data::print(ostream& stream) const
   }
   cout << endl;
 
-  stream << "Speed: ";
-  speed.print(stream);
+  stream << "Speed: " << speed << endl;
 
   stream << "Abilities:";
   if (attributes.intelligent)
@@ -382,10 +388,8 @@ void monster_data::print(ostream& stream) const
       stream << " non-corporeal";
   }
   stream << endl;
-  stream << "Hitpoints: ";
-  hitpoints.print(stream);
-  stream << "Attack Damage: ";
-  damage.print(stream);
+  stream << "Hitpoints: " << hitpoints << endl;
+  stream << "Attack Damage: " << damage << endl;
 }
 
 ostream& operator<<(ostream& stream, const monster_data& mon)
@@ -393,7 +397,7 @@ ostream& operator<<(ostream& stream, const monster_data& mon)
   mon.print(stream);
   return stream;
 }
-
+#ifndef STANDALONE
 monster* monster_data::create() const
 {
   monster* monster = new ::monster();
@@ -403,9 +407,10 @@ monster* monster_data::create() const
   monster->attributes = attributes;
   monster->colors = vector<int>(colors);
   monster->damage = damage;
+  monster->hitpoints = monster->hitpoints_max = hitpoints;
   return monster;
 }
-
+#endif
 string  get_color_name(int color)
 {
   if (color == COLOR_RED) return "RED";
@@ -553,42 +558,42 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
       else if (!next.compare("WEIGHT"))
       {
 	RepCheck(weight);
-	error |= !dice::parse(stream, &object->weight);
+	error |= stream >> object->weight;
       }
       else if (!next.compare("HIT"))
       {
 	RepCheck(hitpoints);
-	error |= !dice::parse(stream, &object->hitpoints);
+	error |= stream >> object->hitpoints;
       }
       else if (!next.compare("DAM"))
       {
 	RepCheck(damage);
-	error |= !dice::parse(stream, &object->damage);
+	error |= stream >> object->damage;
       }
       else if (!next.compare("ATTR"))
       {
 	RepCheck(attribute);
-	error |= !dice::parse(stream, &object->special);
+	error |= stream >> object->special;
       }
       else if (!next.compare("VAL"))
       {
 	RepCheck(value);
-	error |= !dice::parse(stream, &object->value);
+	error |= stream >> object->value;
       }
       else if (!next.compare("DODGE"))
       {
 	RepCheck(dodge);
-	error |= !dice::parse(stream, &object->dodge);
+	error |= stream >> object->dodge;
       }
       else if (!next.compare("DEF"))
       {
 	RepCheck(defense);
-	error |= !dice::parse(stream, &object->defense);
+	error |= stream >> object->defense;
       }
       else if (!next.compare("SPEED"))
       {
 	RepCheck(speed);
-	error |= !dice::parse(stream, &object->speed);
+	error |= stream >> object->speed;
       }
       else if (!next.compare("DESC"))
       {
@@ -654,7 +659,7 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
   }
   return complete;
 }
-
+#ifndef STANDALONE
 item* object_data::create() const
 {
   item* i = new item((object_data*)this);
@@ -674,7 +679,7 @@ item* object_data::create() const
   i->symbol = table[type];
   return i;
 }
-
+#endif
 item_type object_data::get_type(string name)
 {
   if (!name.compare("WEAPON")) return  WEAPON;
@@ -784,7 +789,7 @@ vector<object_data> read_objects()
   file.close();
   return object_types;
 }
-/*
+#ifdef STANDALONE
 int main()
 {
   ifstream file;
@@ -799,7 +804,7 @@ int main()
   }
   for (vector<monster_data>::iterator it = monster_types.begin() ; it != monster_types.end(); ++it)
   {
-    cout << endl << endl;
+    cout << endl;
     cout << *it << endl;
   }
   file.close();
@@ -814,10 +819,11 @@ int main()
     object_types.push_back(ocurrent);
   }
   file.close();
+  cout << object_types.size() << endl;
   for (vector<object_data>::iterator it = object_types.begin() ; it != object_types.end(); ++it)
   {
-    cout << endl;;
-    cout << *it << endl;
+    //cout << endl;;
+    //cout << *it << endl;
   }
 }
-*/
+#endif

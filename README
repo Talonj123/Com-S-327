@@ -4,6 +4,6 @@ Pathfinding distance maps are generated as defined by Assignment 1.03.
 The Monsters move according to Assignment 1.04.
 IO is handled according to Assignment 1.05.
 Characters and fog of ware are implemented according to assignment 1.06.
+Monster and object templates are parsed according to assignment 1.07.
 
-The dungeon file is parsed according to the spec, however, the program does not terminate if it does not see a header, it always skips it unitl it gets to BEGIN MONSTER anyways. (The spec says we MAY exit if it is abssent, not that we have to check for it).
-My parser is a big loop involging stages for different static tokens, and a big if..else if...else if..........else if...else to handle the dynamic tokens. Each token's case handles the parding of it;s data. The dice have shared parsing code, since they are all the same.
+The monsters are not added from the list of parsed monster templates (add_monsters(...)) as are objects (add_items(...)). When the PC walks over an object, its name and description are displayed at the bottom of the terminal. Combat semantics are unchanged. This is not a particularly hard assignment. I did turn the dungeon into a class, the initialization is not in a constructor and the release of resources in a destructor.

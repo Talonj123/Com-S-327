@@ -1,5 +1,5 @@
 #variables
-assignment_num ?= 1.07
+assignment_num ?= 1.08
 name = talbert_james
 main_target = dungeons
 folder_name = $(name).assignment-$(assignment_num)

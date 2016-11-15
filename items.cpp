@@ -77,10 +77,10 @@ char item::get_symbol() const
 }
 
 
-void add_items(dungeon* dungeon, const std::vector<object_data> templates)
+void add_items(dungeon* dungeon, const std::vector<object_data> templates, int num_items)
 {
   int i;
-  for (i = 0; i < 10; i++)
+  for (i = 0; i < num_items; i++)
   {
     item* itm = templates[rand() % templates.size()].create();
     int r, c;
@@ -93,4 +93,79 @@ void add_items(dungeon* dungeon, const std::vector<object_data> templates)
     dungeon->items[r][c] = itm;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

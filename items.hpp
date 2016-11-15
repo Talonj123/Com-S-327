@@ -11,7 +11,7 @@
 typedef class object_data object_data;
 
 typedef enum item_type
-{WEAPON, OFFHAND, RANGED, ARMOR, HELMET, CLOAK, GLOVES, BOOTS, RING, AMULET, LIGHT, SCROLL, BOOK, FLASK, GOLD, AMMUNITION, FOOD, WAND, CONTAINER} item_type;
+{WEAPON, OFFHAND, RANGED, ARMOR, HELMET, CLOAK, GLOVES, BOOTS, AMULET, LIGHT, RING,  SCROLL, BOOK, FLASK, GOLD, AMMUNITION, FOOD, WAND, CONTAINER} item_type;
 
 class item
 {
@@ -51,6 +51,6 @@ public:
 
 };
 
-void add_items(dungeon*, const std::vector<object_data>);
+void add_items(dungeon*, const std::vector<object_data>, int num);
 
 #endif //_ITEMS_HPP_
