@@ -60,7 +60,7 @@ class player : public character
   item *equipment[12];
 
   void equip(int carry_index, int ring_hand = 0);
-  void unequip(int equipment_index);
+  item* unequip(int equipment_index);
 };
 
 #include "dice.hpp"

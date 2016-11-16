@@ -14,19 +14,27 @@
 #define SPACES8 "        "
 #define SPACES10 "          "
 #define SPACES30 "                              "
+#define SPACES80 "                                                                                "
 
 #define DASHES8 "--------"
 #define DASHES10 "----------"
 #define DASHES30 "------------------------------"
+
+using namespace std;
 
 void init_color_pairs();
 void wear_item_interface(player* pc);
 void take_off_item_interface(player* pc);
 void drop_item_interface(dungeon* dungeon, player* pc);
 void expunge_item_interface(player* pc);
+void inventory_interface(dungeon* dungeon, player* pc);
+void inspect_inventory_interface(player* pc);
+void equipment_interface(dungeon* dungeon, player* pc);
+void inventory_interface(dungeon* dungeon, player* pc);
+void inspect_inventory_interface(player* pc);
 void monster_list_interface(dungeon_t* dungeon);
-void print_inventory(const player *pc);
-void print_equipment(const player *pc);
+void print_inventory(const player *pc, int selected = -1);
+void print_equipment(const player *pc, int selected = -1);
 
 void monster_list_interface(dungeon_t* dungeon)
 {
@@ -132,12 +140,26 @@ void monster_list_interface(dungeon_t* dungeon)
     free(lines[i]);
   }
   free(lines);
-  
+
   print_dungeon(dungeon);
 }
 
 void wear_item_interface(player* pc)
 {
+  int i;
+  for (i = 0; i < 10; i++)
+  {
+    if (pc->carry[i] != NULL)
+    {
+      break;
+    }
+  }
+  if (i >= 10)
+  {
+    mvprintw(22, 0, "Inventory is empty :/                                    ");
+    return;
+  }
+  mvprintw(22, 0, "Select a slot to wear: (0-9)                                   ");
   while (1)
   {
     print_inventory(pc);
@@ -179,7 +201,6 @@ void wear_item_interface(player* pc)
 
 void take_off_item_interface(player* pc)
 {
-
   int i;
   for (i = 0; i < 10; i++)
   {
@@ -193,6 +214,7 @@ void take_off_item_interface(player* pc)
     mvprintw(22, 0, "Inventory is full :/                                    ");
     return;
   }
+  mvprintw(22, 0, "Select a slot to take off: (a-l)                                   ");
   while (1)
   {
     print_equipment(pc);
@@ -211,7 +233,7 @@ void take_off_item_interface(player* pc)
       }
       else
       {
-	pc->unequip(index);
+	pc->carry[i] = pc->unequip(index);
       }
     }
   }
@@ -219,7 +241,6 @@ void take_off_item_interface(player* pc)
 
 void drop_item_interface(dungeon* dungeon, player* pc)
 {
-
   int i;
   for (i = 0; i < 10; i++)
   {
@@ -233,6 +254,7 @@ void drop_item_interface(dungeon* dungeon, player* pc)
     mvprintw(22, 0, "Inventory is empty :/                                    ");
     return;
   }
+  mvprintw(22, 0, "Select a slot to drop: (0-9)                                   ");
   while (1)
   {
     print_inventory(pc);
@@ -258,7 +280,6 @@ void drop_item_interface(dungeon* dungeon, player* pc)
   }
 }
 
-
 void expunge_item_interface(player* pc)
 {
 
@@ -275,6 +296,7 @@ void expunge_item_interface(player* pc)
     mvprintw(22, 0, "Inventory is empty :/                                    ");
     return;
   }
+  mvprintw(22, 0, "Select a slot to destroy: (0-9)                                   ");
   while (1)
   {
     print_inventory(pc);
@@ -300,6 +322,161 @@ void expunge_item_interface(player* pc)
   }
 }
 
+void inventory_interface(dungeon* dungeon, player* pc)
+{
+  int selected = 0;
+  while (true)
+  {
+    print_inventory(pc, selected);
+    int key = getch();
+    if (key == 033)
+    {
+      break;
+    }
+    else if ((key == 0403) && (selected > 0))
+    {
+      selected--;
+    }
+    else if ((key == 0402) && (selected < 9))
+    {
+      selected++;
+    }
+    else if (key == 'x')
+    {
+      delete pc->carry[selected];
+      pc->carry[selected] = NULL;
+    }
+    else if (key == 'd')
+    {
+      if (pc->carry[selected] != NULL)
+      {
+	item* holder = pc->carry[selected];
+	pc->carry[selected] = dungeon->items[pc->loc.y][pc->loc.x];
+	dungeon->items[pc->loc.y][pc->loc.x] = holder;
+      }
+    }
+    else if (key == 'w')
+    {
+      if (pc->carry[selected] != NULL)
+      {
+	if (pc->carry[selected]->get_type() < WEAPON || pc->carry[selected]->get_type() > RING)
+	{
+	  mvprintw(22, 0, "The item in  slot %d isn't wearable.                         ", selected);
+	}
+	else if (pc->carry[selected]->get_type() == RING)
+	{
+	  char hand = ' ';
+	  do
+	  {
+	    mvprintw(22, 0, "Enter a hand to put the ring on (r/l): %c                         ", hand);
+	    refresh();
+	    hand = getch();
+	  } while (hand != 'r' && hand != 'l');
+	  pc->equip(selected, (hand == 'r') ? 0 : 1);
+	}
+	else
+	{
+	  pc->equip(selected);
+	}
+      }
+    }
+  }
+}
+
+void equipment_interface(dungeon* dungeon, player* pc)
+{
+  int selected = 0;
+  while (true)
+  {
+    print_equipment(pc, selected);
+    int key = getch();
+    if (key == 033)
+    {
+      break;
+    }
+    else if ((key == 0403) && (selected > 0))
+    {
+      selected--;
+    }
+    else if ((key == 0402) && (selected < 9))
+    {
+      selected++;
+    }
+    else if (key == 'x')
+    {
+      if (pc->equipment[selected] != NULL)
+      {
+	delete pc->unequip(selected);
+      }
+    }
+    else if (key == 'd')
+    {
+      if (pc->equipment[selected] != NULL)
+      {
+	dungeon->items[pc->loc.y][pc->loc.x] = pc->unequip(selected);
+      }
+    }
+    else if (key == 't')
+    {
+      if (pc->equipment[selected] != NULL)
+      {
+	int i;
+	for (i = 0; i < 10; i++)
+	{
+	  if (pc->carry[i] != NULL)
+	  {
+	    break;
+	  }
+	}
+	if (i >= 10)
+	{
+	  mvprintw(22, 0, "Inventory is full :/                                    ");
+	  continue;
+	}
+	pc->carry[i] = pc->unequip(selected);
+      }
+    }
+  }
+}
+
+void inspect_inventory_interface(player* pc)
+{
+  int selected = 0;
+  while (true)
+  {
+    print_inventory(pc, selected);
+    int row = 16, i;
+    for (i = 0; i < 24-row; i++)
+    {
+      if (pc->carry[selected] != NULL)
+      {
+	string desc = pc->carry[selected]->get_description();
+	int length = desc.length();
+	if (length > i*80)
+	{
+	  string line = desc.substr(i*80, (i+1)*80 + 1).append(length % 80, ' ');
+	  mvprintw(row + i, 0, "%s", line.c_str());
+	  continue;
+	}
+      }
+	mvprintw(row + i, 0, "                                                                                ");
+    }
+    int key = getch();
+    if (key == 033)
+    {
+      break;
+    }
+    else if ((key == 0403) && (selected > 0))
+    {
+      selected--;
+    }
+    else if ((key == 0402) && (selected < 9))
+    {
+      selected++;
+    }
+  }
+}
+
 void pc_turn_interface(dungeon_t* dungeon, player* pc)
 {
   if (!pc->alive)
@@ -309,32 +486,17 @@ void pc_turn_interface(dungeon_t* dungeon, player* pc)
   print_dungeon(dungeon);
   
   point_t loc = get_character_loc((character*)pc);
-    
-  /*
-  int r, c, num = 0;
-  for (r = 0; r < DUNGEON_ROWS; r++)
-  {
-    for (c = 0; c < DUNGEON_COLS; c++)
-    {
-      if (dungeon->characters[r][c] != NULL)
-      {
-	num++;
-      }
-    }
-  }
-  mvprintw(22, 0, "num_characters: %d", dungeon->num_characters);
-  mvprintw(23, 0, "     (counted): %d", num);
-  */
+
   int ch;
 GETCHAR_LBL:
   ch = getch();
-  mvprintw(0, 0, "Key: %#o          ", ch);
+  mvprintw(0, 0, SPACES80);
+  mvprintw(0, 0, "Key: %#o", ch);
+  refresh();
   switch (ch)
   {
   default:
-    mvprintw(0, 0, "Unknown Key: %#o  ", ch);
     goto GETCHAR_LBL;
-    break;
 
     /* numpad.7 (up+left) */
   case 067:
@@ -404,7 +566,6 @@ GETCHAR_LBL:
 
   case 'm':
     monster_list_interface(dungeon);
-    goto GETCHAR_LBL;
     break;
 
   case '<':
@@ -432,22 +593,86 @@ GETCHAR_LBL:
     wear_item_interface(pc);
     print_dungeon(dungeon);
     goto GETCHAR_LBL;
-    break;
   case 't':
     take_off_item_interface(pc);
     print_dungeon(dungeon);
     goto GETCHAR_LBL;
-    break;
   case 'd':
     drop_item_interface(dungeon, pc);
     print_dungeon(dungeon);
     goto GETCHAR_LBL;
-    break;
   case 'x':
     expunge_item_interface(pc);
     print_dungeon(dungeon);
     goto GETCHAR_LBL;
-    break;
+  case 'i':
+    inventory_interface(dungeon, pc);
+    print_dungeon(dungeon);
+    goto GETCHAR_LBL;
+  case 'e':
+    equipment_interface(dungeon, pc);
+    print_dungeon(dungeon);
+    goto GETCHAR_LBL;
+  case 'I':
+    inspect_inventory_interface(pc);
+    print_dungeon(dungeon);
+    goto GETCHAR_LBL;
+  };
+  mvprintw(22, 0, SPACES80);
+  mvprintw(23, 0, SPACES80);
+  item* item = dungeon->items[pc->loc.y][pc->loc.x];
+  //item* item = NULL;
+  if (item != NULL)
+  {
+    string name = item->get_name();
+    bool has_empty = false;
+    unsigned int i;
+    for (i = 0; i < 10; i++)
+    {
+      if (pc->carry[i] == NULL)
+      {
+	has_empty = true;
+	break;
+      }
+    }
+    if (has_empty)
+    {
+      // pick up item
+      pc->carry[i] = item;
+      dungeon->items[pc->loc.y][pc->loc.x] = NULL;
+      mvprintw(22, 0, "Picked up ");
+      if (name.length() > 40)
+      {
+	name = name.substr(0, 37);
+	mvprintw(22, 10, (name + "...").c_str());
+      }
+      else
+      {
+	mvprintw(22, 10, name.c_str());
+      }
+    }
+    else
+    {
+      if (name.length() > 40)
+      {
+	name = name.substr(0, 37);
+	mvprintw(22, 0, (name + "...").c_str());
+      }
+      else
+      {
+	mvprintw(22, 0, name.c_str());
+      }
+    }
+
+    if (item->get_description().length() > 80)
+    {
+      mvprintw(23, 0, (item->get_description().substr(0, 77) + "...").c_str());
+    }
+    else
+    {
+      mvprintw(23, 0, item->get_description().c_str());
+    }
+    refresh();
   }
 }
 
@@ -512,7 +737,7 @@ void print_dungeon(dungeon_t* dungeon)
   refresh();
 }
 
-void print_inventory(const player *pc)
+void print_inventory(const player *pc, int selected)
 {
   char *lines[10];
   int i;
@@ -538,7 +763,15 @@ void print_inventory(const player *pc)
   for (i = 0; i < 10; i++)
   {
     char* str = lines[i];
+    if (i == selected)
+    {
+      attron(COLOR_PAIR(COLOR_GREEN));
+    }
     mvprintw(i+(21-10)/2, (80-strlen(str))/2, str);
+    if (i == selected)
+    {
+      attroff(COLOR_PAIR(COLOR_GREEN));
+    }
   }
   refresh();  
   for (i = 0; i < 10; i++)
@@ -547,7 +780,7 @@ void print_inventory(const player *pc)
   }  
 }
 
-void print_equipment(const player *pc)
+void print_equipment(const player *pc, int selected)
 {
   char *lines[12];
   int i;
@@ -573,7 +806,15 @@ void print_equipment(const player *pc)
   for (i = 0; i < 12; i++)
   {
     char* str = lines[i];
+    if (i == selected)
+    {
+      attron(COLOR_PAIR(COLOR_GREEN));
+    }
     mvprintw(i+(21-12)/2, (80-strlen(str))/2, str);
+    if (i == selected)
+    {
+      attroff(COLOR_PAIR(COLOR_GREEN));
+    }
   }
   refresh();  
   for (i = 0; i < 12; i++)

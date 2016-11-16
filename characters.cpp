@@ -119,18 +119,12 @@ void player::equip(int carry_index, int ring_hand)
   equipment[equip_index] = new_item;
 }
 
-void player::unequip(int equipment_index)
+item* player::unequip(int equipment_index)
 {
-  int i;
-  for (i = 0; i < 10; i++)
-  {
-    if (carry[i] == NULL)
-    {
-      break;
-    }
-  }
-  carry[i] = equipment[equipment_index];
+  item* holder = equipment[equipment_index];
   equipment[equipment_index] = NULL;
+
+  return holder;
 }
 
 player* get_new_pc()
@@ -423,59 +417,7 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
   pc->UpdateMemory(dungeon);
 
   pc_turn_interface(dungeon, pc);
-  if (dungeon->items[pc->loc.y][pc->loc.x] != NULL)
-  {
-    item* item = dungeon->items[pc->loc.y][pc->loc.x];
-    bool has_empty = false;
-    unsigned int i;
-    for (i = 0; i < sizeof(pc->carry)/sizeof(pc->carry[0]); i++)
-    {
-      if (pc->carry[i] == NULL)
-      {
-	has_empty = true;
-	break;
-      }
-    }
-    if (has_empty)
-    {
-      pc->carry[i] = item;
-      dungeon->items[pc->loc.y][pc->loc.x] = NULL;
-      mvprintw(22, 0, "Picked up ");
-      if (item->get_name().length() > 30)
-      {
-	mvprintw(22, 10, (item->get_name().substr(0, 27) + "...""          ""          ""          ""          ""          ").c_str());
-      }
-      else
-      {
-	mvprintw(22, 10, (item->get_name() + "         ""         ""         ""         ""         ""         ""         ").c_str());
-      }
-    }
-    else
-    {
-      if (item->get_name().length() > 30)
-      {
-	mvprintw(22, 0, (item->get_name().substr(0, 27) + "...").c_str());
-      }
-      else
-      {
-	mvprintw(22, 0, item->get_name().c_str());
-      }
-    }
-
-    if (item->get_description().length() > 80)
-    {
-      mvprintw(23, 0, (item->get_description().substr(0, 77) + "...").c_str());
-    }
-    else
-    {
-      mvprintw(23, 0, item->get_description().c_str());
-    }
-  }
-  else
-  {
-    mvprintw(22, 0, "          ""          ""          ""          ""          ""          ""          ""          ");
-    mvprintw(23, 0, "          ""          ""          ""          ""          ""          ""          ""          ");
-  }
+  
   this_event->time += 100/pc->speed;
   add_event(this_event);
 }
