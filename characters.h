@@ -35,6 +35,11 @@ class character
  public:
   character();
   character(char symb, int spd, CharacterType typ, int hp);
+  virtual ~character() = 0;
+
+  virtual int get_damage() = 0;
+  virtual void take_damage(int amt);
+
   char symbol;
   std::vector<int> colors;
   point_t loc;
@@ -50,7 +55,13 @@ class player : public character
 {
  public:
   player();
-  ~player();
+  virtual ~player();
+
+  virtual int get_damage();
+  virtual void take_damage(int amt);
+
+  void regen_hp();
+
   PlayerMemory memory;
 
   void UpdateMemory(dungeon_t* dungeon);
@@ -69,6 +80,10 @@ class monster : public character
 {
 public:
   monster();
+  virtual ~monster();
+
+  virtual int get_damage();
+
   monster_attributes_t attributes;
   point_t last_known_pc;
 };

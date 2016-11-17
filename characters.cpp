@@ -15,6 +15,34 @@
 #define TELEPATHIC (0x02)
 #define INTELLIGENT (0x01)
 
+using namespace std;
+
+void check_duplicates(dungeon* dungeon)
+{
+  vector<character*> characters;
+  int r, c;
+  for (r = 0; r < DUNGEON_ROWS; r++)
+  {
+    for (c = 0; c < DUNGEON_COLS; c++)
+    {
+      character* character = dungeon->characters[r][c];
+      if (character != NULL)
+      {
+	unsigned int i;
+	for (i = 0; i < characters.size(); i++)
+	{
+	  if (characters[i] == character)
+	  {
+	    fprintf(stderr, "ERROR, character in 2 places at once.\r\n");
+	    *(int*)NULL = 0;
+	  }
+	}
+	characters.push_back(character);
+      }
+    }
+  }
+}
+
 game_state_t game_state;
 
 typedef struct monster_event
@@ -39,7 +67,20 @@ character::character(char symb, int spd, CharacterType typ, int hp) : symbol(sym
 {
 }
 
-player::player() : character('@', 10, PC, 100)
+character::~character()
+{
+}
+
+void character::take_damage(int amt)
+{
+  hitpoints -= amt;
+  if (hitpoints < 0)
+  {
+    alive = false;
+  }
+}
+
+player::player() : character('@', 10, PC, 1000)
 {
   colors.push_back(COLOR_WHITE);
   hitpoints = hitpoints_max;
@@ -68,6 +109,41 @@ player::~player()
   }
 }
 
+int player::get_damage()
+{
+  int damage = this->damage.roll();
+  if (equipment[WEAPON] != NULL)
+  {
+    damage = equipment[WEAPON]->get_damage().roll();
+  }
+  int i;
+  for (i = OFFHAND; i <= LIGHT; i++)
+  {
+    if (equipment[i] != NULL)
+    {
+      damage += equipment[i]->get_damage();
+    }
+  }
+  if (equipment[RING] != NULL)
+  {
+    damage += equipment[RING]->get_damage();
+  }
+  if (equipment[RING+1] != NULL)
+  {
+    damage += equipment[RING+1]->get_damage();
+  }
+  return damage;
+}
+
+void player::take_damage(int amt)
+{
+  hitpoints -= amt;
+  if (hitpoints < 0)
+  {
+    alive = false;
+  }
+}
+
 void player::equip(int carry_index, int ring_hand)
 {
   item *new_item = carry[carry_index];
@@ -76,55 +152,47 @@ void player::equip(int carry_index, int ring_hand)
     return;
   }
   item_type type = new_item->get_type();
-  int equip_index;
-  switch (type)
+  int equip_index = (int)type;
+  if (type == RING)
   {
-  default:
-    return;
-  case WEAPON:
-    equip_index = 0;
-    break;
-  case OFFHAND:
-    equip_index = 1;
-    break;
-  case RANGED:
-    equip_index = 2;
-    break;
-  case ARMOR:
-    equip_index = 3;
-    break;
-  case HELMET:
-    equip_index = 4;
-    break;
-  case CLOAK:
-    equip_index = 5;
-    break;
-  case GLOVES:
-    equip_index = 6;
-    break;
-  case BOOTS:
-    equip_index = 7;
-    break;
-  case AMULET:
-    equip_index = 8;
-    break;
-  case LIGHT:
-    equip_index = 9;
-    break;
-  case RING:
-    equip_index = 10 + (ring_hand ? 1 : 0);
-    break;
+    equip_index += ring_hand;
   }
-  carry[carry_index] = equipment[equip_index];
+  
+  carry[carry_index] = unequip(equip_index);
+  speed += new_item->get_speed();
+  double percent_hp = hitpoints/hitpoints_max;
+  hitpoints_max += new_item->get_defense();
+  hitpoints = hitpoints_max * percent_hp;
   equipment[equip_index] = new_item;
 }
 
 item* player::unequip(int equipment_index)
 {
+  if (equipment[equipment_index] == NULL)
+  {
+    return NULL;
+  }
   item* holder = equipment[equipment_index];
   equipment[equipment_index] = NULL;
 
+  speed -= holder->get_speed();
+  double percent_hp = hitpoints/hitpoints_max;
+  hitpoints_max -= holder->get_defense();
+  hitpoints = hitpoints_max * percent_hp;
+
   return holder;
+}
+
+void player::regen_hp()
+{
+  static double remainder = 0;
+  double increment = hitpoints_max/100.0 + remainder;
+  remainder = increment - (int)increment;
+  hitpoints += (int)increment;
+  if (hitpoints > hitpoints_max)
+  {
+    hitpoints = hitpoints_max;
+  }
 }
 
 player* get_new_pc()
@@ -136,19 +204,33 @@ player* get_new_pc()
     for (c = 0; c < DUNGEON_COLS; c++)
     {
       pc->memory.terrain[r][c] = WALL;
+      pc->memory.items[r][c] = NULL;
     } 
   }
   return pc;
 }
 
-monster::monster()
+monster::monster() : character('?', 10, MONSTER, 10)
 {
   last_known_pc.x = 0;
   last_known_pc.y = 0;
 }
 
+monster::~monster()
+{
+}
+
+int monster::get_damage()
+{
+  return damage.roll();
+}
+
 void move_character(dungeon_t* dungeon, character* character, point_t nloc, char tunneling)
 {
+  if (nloc.x == character->loc.x && nloc.y == character->loc.y)
+  {
+    return;
+  }
   if (dungeon->terrain[nloc.y][nloc.x] == WALL)
   {
     if (!tunneling || (dungeon->hardness[nloc.y][nloc.x] == MAX_HARDNESS))
@@ -174,20 +256,50 @@ void move_character(dungeon_t* dungeon, character* character, point_t nloc, char
       get_distances(dungeon);
     }
   }
+  check_duplicates(dungeon);
   point_t loc = character->loc;
-
-  //character* other = NULL;
-  if (dungeon->characters[nloc.y][nloc.x] != NULL)
+  ::character* other = dungeon->characters[nloc.y][nloc.x];
+  if (other != NULL)
   {
-    //character* that;
-    //    that = ;
-    dungeon->characters[nloc.y][nloc.x]->alive = false;
-    /* let the event handler clean it up */
-    dungeon->num_characters--;
+    if (other->type == PC)
+    {      
+      other->take_damage(character->get_damage());
+      if (!other->alive)
+      {
+	dungeon->num_characters--;
+	//dungeon->characters[nloc.y][nloc.x] = NULL;
+      }
+    }
+    else
+    {
+      dungeon->characters[loc.y][loc.x] = NULL;
+      // displace other
+      static const point_t table[8] = { {0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1} };
+      int start = rand();
+      int i = 0;
+      for (i = 0; i < 8; i++)
+      {
+	point_t to_test = {table[(i+start)%8].x + other->loc.x, table[(i+start)%8].y + other->loc.y};
+	if (dungeon->terrain[to_test.y][to_test.x] != WALL &&
+	    dungeon->characters[to_test.y][to_test.x] == NULL)
+	{
+	  dungeon->characters[other->loc.y][other->loc.x] = NULL;
+	  dungeon->characters[to_test.y][to_test.x] = other;
+	  other->loc = to_test;
+	  break;
+	}
+      }
+      dungeon->characters[nloc.y][nloc.x] = character;
+      character->loc = nloc;
+    }
+    check_duplicates(dungeon);
   }
-  dungeon->characters[nloc.y][nloc.x] = character;
-  dungeon->characters[loc.y][loc.x] = NULL;
-  character->loc = nloc;
+  else
+  {
+    dungeon->characters[nloc.y][nloc.x] = character;
+    dungeon->characters[loc.y][loc.x] = NULL;
+    character->loc = nloc;
+  }
 }
 
 char character_try_move_random(dungeon_t* dungeon, character* character, char tunneling)
@@ -256,7 +368,10 @@ void move_toward_pc_path(dungeon_t* dungeon, monster* monster)
       }
     }
   }
-  move_character(dungeon, monster, nloc, monster->attributes.tunneling);
+  if (loc.x != nloc.x || loc.y != nloc.y)
+  {
+    move_character(dungeon, monster, nloc, monster->attributes.tunneling);
+  }
 }
 
 void move_toward_pc_line(dungeon_t* dungeon, monster* monster)
@@ -299,7 +414,10 @@ void move_toward_pc_line(dungeon_t* dungeon, monster* monster)
       }
     }
   }
-  move_character(dungeon, monster, nloc, monster->attributes.tunneling);
+  if (monloc.x != nloc.x || monloc.y != nloc.y)
+  {
+    move_character(dungeon, monster, nloc, monster->attributes.tunneling);
+  }
 }
 
 void monster_take_turn(dungeon_t* dungeon, event_t* this_event)
@@ -394,18 +512,26 @@ char pc_try_move(dungeon_t* dungeon, player* pc, int dx, int dy)
   if (dungeon->characters[nloc.y][nloc.x] != NULL)
   {
     character* character = dungeon->characters[nloc.y][nloc.x];
-    character->alive = false;
-    /* let the event handler clean it up */
-    dungeon->num_characters--;
+    character->take_damage(pc->get_damage());
+    if (!character->alive)
+    {
+      dungeon->num_characters--;
+      dungeon->characters[nloc.y][nloc.x] = NULL;
+    }
   }
-  dungeon->characters[nloc.y][nloc.x] = pc;
-  dungeon->characters[loc.y][loc.x] = NULL;
-  pc->loc = nloc;
+  else
+  {
+    dungeon->characters[nloc.y][nloc.x] = pc;
+    dungeon->characters[loc.y][loc.x] = NULL;
+    pc->loc = nloc;
+  }
   return 1;
 }
 
 void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
 {
+  //**DEBUG
+  check_duplicates(dungeon);
   player* pc = ((pc_event_t*)this_event)->pc;
   if (!pc->alive)
   {
@@ -413,7 +539,7 @@ void pc_take_turn(dungeon_t* dungeon, event_t* this_event)
     free(this_event);
     return;
   }
-
+  pc->regen_hp();
   pc->UpdateMemory(dungeon);
 
   pc_turn_interface(dungeon, pc);
@@ -427,7 +553,10 @@ void monster_cleanup(dungeon_t* dungeon, event_t* this_event)
   monster_event_t* monster_event = ((monster_event_t*)this_event);
   monster* monster = monster_event->target;
   point_t loc = monster->loc;
-  dungeon->characters[loc.y][loc.x] = NULL;
+  if (monster->alive)
+  {
+    dungeon->characters[loc.y][loc.x] = NULL;
+  }
   delete monster;
   free(this_event);
 }
@@ -514,10 +643,15 @@ PlayerMemory get_pc_memory(player* pc)
 
 void player::UpdateMemory(dungeon_t* dungeon)
 {
-  int dy, dx;
-  for (dy = -3; dy <= 3; dy++)
+  int radius = 3;
+  if (equipment[LIGHT] != NULL)
   {
-    for (dx = -3; dx <= 3; dx++)
+    radius += equipment[LIGHT]->get_special();
+  }
+  int dy, dx;
+  for (dy = -radius; dy <= radius; dy++)
+  {
+    for (dx = -radius; dx <= radius; dx++)
     {
       if (loc.y + dy >= 0 && loc.y + dy < DUNGEON_ROWS &&
 	  loc.x + dx >= 0 && loc.x + dx < DUNGEON_COLS)

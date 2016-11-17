@@ -1,4 +1,20 @@
 # Change Log
+## 2016-11-16
+# Changes
+ - Various fixes/improvements
+ - Added Insoection to inventory and equipment menus
+
+## 2016-11-15
+# Additions
+ - Combat semantics
+# Fixes
+ - Memory errors caused by combat semantics
+
+## 2016-11-14
+# Additions
+ - Inventory and equipment menus
+ - drop/wear/take off/destroy/inspect menus
+
 ## 2016-11-9
 # Additions
  - Added items to the dungeon and PC memory

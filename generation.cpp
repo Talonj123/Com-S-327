@@ -45,6 +45,12 @@ bool dice::parse(istream& stream, dice* target)
     stream.get();
   }
   int value = 0;
+
+  if (stream.peek() == '-')
+  {
+    value = -1;
+    stream.get();
+  }
   while (isdigit(stream.peek()))
   {
     value *= 10;
@@ -55,7 +61,13 @@ bool dice::parse(istream& stream, dice* target)
   {
     return false;
   }
+
   value = 0;
+  if (stream.peek() == '-')
+  {
+    value = -1;
+    stream.get();
+  }
   while (isdigit(stream.peek()))
   {
     value *= 10;
@@ -66,7 +78,13 @@ bool dice::parse(istream& stream, dice* target)
   {
     return false;
   }
+
   value = 0;
+  if (stream.peek() == '-')
+  {
+    value = -1;
+    stream.get();
+  }
   while (isdigit(stream.peek()))
   {
     value *= 10;

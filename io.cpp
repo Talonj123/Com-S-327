@@ -41,6 +41,7 @@ void monster_list_interface(dungeon_t* dungeon)
   int num_monsters = dungeon->num_characters-1;
   character** character_list = (character**)calloc(num_monsters, sizeof(character*));
   int r, c, i = 0;
+  fprintf(stderr, "%d\r\n", num_monsters);
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
     for (c = 0; c < DUNGEON_COLS; c++)
@@ -48,6 +49,16 @@ void monster_list_interface(dungeon_t* dungeon)
       character* character = dungeon->characters[r][c];
       if (character != NULL && character->type == MONSTER)
       {
+	//**DEBUG
+	int k;
+	for (k = 0; k < i; k++)
+	{
+	  if (character_list[k] == character)
+	  {
+	    fprintf(stderr, "DUPLICATE: list[%d]==list[%d]\r\n", k, i);
+	  }
+	}
+	fprintf(stderr, "%d\r\n", i);
 	character_list[i++] = character;
 	get_character_loc(character);
       }
@@ -59,7 +70,7 @@ void monster_list_interface(dungeon_t* dungeon)
   {
     lines[i] = (char*)malloc(sizeof(char)*35);
     character* monster = character_list[i];
-    point_t mloc = get_character_loc(monster);
+    point_t mloc = monster->loc;
     point_t diff = { mloc.x - loc.x, mloc.y - loc.y };
     sprintf(lines[i], "| A %c, %2d %5s and %2d %4s |",
 	    get_character_symbol(monster),
@@ -328,6 +339,22 @@ void inventory_interface(dungeon* dungeon, player* pc)
   while (true)
   {
     print_inventory(pc, selected);
+    int row = 16, i;
+    for (i = 0; i < 24-row; i++)
+    {
+      if (pc->carry[selected] != NULL)
+      {
+	string desc = pc->carry[selected]->get_description();
+	int length = desc.length();
+	if (length > i*80)
+	{
+	  string line = desc.substr(i*80, (i+1)*80 + 1).append(80 - (length % 80), ' ');
+	  mvprintw(row + i, 0, "%s", line.c_str());
+	  continue;
+	}
+      }
+	mvprintw(row + i, 0, "                                                                                ");
+    }
     int key = getch();
     if (key == 033)
     {
@@ -389,6 +416,22 @@ void equipment_interface(dungeon* dungeon, player* pc)
   while (true)
   {
     print_equipment(pc, selected);
+    int row = 17, i;
+    for (i = 0; i < 26-row; i++)
+    {
+      if (pc->equipment[selected] != NULL)
+      {
+	string desc = pc->equipment[selected]->get_description();
+	int length = desc.length();
+	if (length > i*80)
+	{
+	  string line = desc.substr(i*80, (i+1)*80 + 1).append(80 - (length % 80), ' ');
+	  mvprintw(row + i, 0, "%s", line.c_str());
+	  continue;
+	}
+      }
+      mvprintw(row + i, 0, "                                                                                ");
+    }
     int key = getch();
     if (key == 033)
     {
@@ -398,7 +441,7 @@ void equipment_interface(dungeon* dungeon, player* pc)
     {
       selected--;
     }
-    else if ((key == 0402) && (selected < 9))
+    else if ((key == 0402) && (selected < 11))
     {
       selected++;
     }
@@ -484,11 +527,12 @@ void pc_turn_interface(dungeon_t* dungeon, player* pc)
     fprintf(stderr, "PC DEAD, BUT INTERFACE CALLED\n");
   }
   print_dungeon(dungeon);
-  
+  mvprintw(0, 20, "HP: %d/%d", pc->hitpoints, pc->hitpoints_max);
   point_t loc = get_character_loc((character*)pc);
 
   int ch;
 GETCHAR_LBL:
+  pc->UpdateMemory(dungeon);
   ch = getch();
   mvprintw(0, 0, SPACES80);
   mvprintw(0, 0, "Key: %#o", ch);
@@ -566,6 +610,7 @@ GETCHAR_LBL:
 
   case 'm':
     monster_list_interface(dungeon);
+    goto GETCHAR_LBL;
     break;
 
   case '<':
@@ -591,6 +636,7 @@ GETCHAR_LBL:
     break;
   case 'w':
     wear_item_interface(pc);
+    pc->UpdateMemory(dungeon);
     print_dungeon(dungeon);
     goto GETCHAR_LBL;
   case 't':
@@ -607,6 +653,7 @@ GETCHAR_LBL:
     goto GETCHAR_LBL;
   case 'i':
     inventory_interface(dungeon, pc);
+    pc->UpdateMemory(dungeon);
     print_dungeon(dungeon);
     goto GETCHAR_LBL;
   case 'e':
@@ -680,6 +727,13 @@ void print_dungeon(dungeon_t* dungeon)
 {
   const PlayerMemory memory = get_pc_memory(dungeon->get_pc());
   point_t loc = get_character_loc((character*)dungeon->get_pc());
+
+  int radius = 3;
+  if (dungeon->get_pc()->equipment[LIGHT] != NULL)
+  {
+    radius += dungeon->get_pc()->equipment[LIGHT]->get_special();
+  }
+
   int r, c;
   for (r = 0; r < DUNGEON_ROWS; r++)
   {
@@ -690,7 +744,7 @@ void print_dungeon(dungeon_t* dungeon)
       //tile_type tile = dungeon->terrain[r][c];
       char ch = ' ';
       int color = COLOR_WHITE;
-      if (dungeon->characters[r][c] != NULL && (abs(loc.x - c) <= 3) && (abs(loc.y - r) <= 3))
+      if (dungeon->characters[r][c] != NULL && (abs(loc.x - c) <= radius) && (abs(loc.y - r) <= radius))
       {
 	character* character = dungeon->characters[r][c];
         ch = get_character_symbol(character);
@@ -721,14 +775,14 @@ void print_dungeon(dungeon_t* dungeon)
       {
         ch = '>';
       }
-      if (abs(loc.x - c) <= 3 && abs(loc.y - r) <= 3)
+      if (abs(loc.x - c) <= radius && abs(loc.y - r) <= radius)
       {
 	attron(A_BOLD);
       }
       attron(COLOR_PAIR(color));
       mvaddch(r+1, c, ch);
       attroff(COLOR_PAIR(color));
-      if (abs(loc.x - c) <= 3 && abs(loc.y - r) <= 3)
+      if (abs(loc.x - c) <= radius && abs(loc.y - r) <= radius)
       {
 	attroff(A_BOLD);
       }
