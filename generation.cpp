@@ -137,6 +137,7 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
       bool damage : 1;
       bool abilities : 1;
       bool hitpoints : 1;
+      bool difficulty : 1;
       bool description : 1;
     };
     int raw;
@@ -265,6 +266,15 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
 	  goto PARSE_DESC_LINE;
 	}
       }
+      else if (!next.compare("LEVEL"))
+      {
+	found.difficulty = true;
+	while (isspace(stream.peek()))
+	{
+	  stream.get();
+	}
+	stream >> monster->difficulty;
+      }
       else if (!next.compare("SPEED"))
       {
 	if (found.speed)
@@ -362,7 +372,12 @@ bool monster_data::try_parse(istream& stream, monster_data* monster)
       }
     } 
   }
-  if (found.raw != 0xFF)
+  if (!found.difficulty)
+  {
+    monster->difficulty = 0;
+  }
+  found.difficulty = true;
+  if (found.raw != 0x1FF)
   {
     goto MONSTER_DATA_PARSE_TOP;
   }
@@ -429,6 +444,12 @@ monster* monster_data::create() const
   return monster;
 }
 #endif
+
+bool monster_data::check_level(int against) const
+{
+  return difficulty <= against;
+}
+
 string  get_color_name(int color)
 {
   if (color == COLOR_RED) return "RED";
@@ -507,6 +528,7 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
       bool defense : 1;
       bool attribute : 1;
       bool hitpoints : 1;
+      bool difficulty : 1;
       bool description : 1;
     };
     int raw;
@@ -572,6 +594,15 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
 	    object->colors.push_back(color);
 	  }
 	}
+      }
+      else if (!next.compare("LEVEL"))
+      {
+	found.difficulty = true;
+	while (isspace(stream.peek()))
+	{
+	  stream.get();
+	}
+	stream >> object->difficulty;
       }
       else if (!next.compare("WEIGHT"))
       {
@@ -671,7 +702,12 @@ bool object_data::try_parse(std::istream& stream, object_data* object)
       }
     }
   }
-  if (found.raw != 0xFFF)
+  if (!found.difficulty)
+  {
+    object->difficulty = 0;
+  }
+  found.difficulty = true;
+  if (found.raw != 0x1FFF)
   {
     return false;
   }
@@ -696,6 +732,11 @@ item* object_data::create() const
   char table[] = { '|', ')', '}', '[', ']', '(', '{', '\\', '=', '\"', '_', '~', '?', '!', '$', '/', ',', '-', '%' };
   i->symbol = table[type];
   return i;
+}
+
+bool object_data::check_level(int against) const
+{
+  return difficulty <= against;
 }
 #endif
 item_type object_data::get_type(string name)

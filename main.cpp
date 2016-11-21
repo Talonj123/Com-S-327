@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
   print_dungeon(dungeon);
   game_state.running = 1;
   game_state.quitted = 0;
+  game_state.level = 0;
   while (game_state.running)
   {
     if (game_state.reload)

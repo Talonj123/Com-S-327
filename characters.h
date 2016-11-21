@@ -49,6 +49,8 @@ class character
   dice damage;
   int hitpoints;
   int hitpoints_max;
+  int dodge;
+  int hit_boost;
 };
 
 class player : public character

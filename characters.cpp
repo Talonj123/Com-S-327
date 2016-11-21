@@ -59,7 +59,7 @@ typedef struct pc_event
 
 } pc_event_t;
 
-character::character() : alive(true)
+character::character() : alive(true), dodge(0)
 {
 }
 
@@ -80,10 +80,12 @@ void character::take_damage(int amt)
   }
 }
 
-player::player() : character('@', 10, PC, 1000)
+player::player() : character('@', 10, PC, 500)
 {
   colors.push_back(COLOR_WHITE);
   hitpoints = hitpoints_max;
+  hit_boost = 0;
+  dodge = 0;
   damage = dice(0, 1, 4);
   unsigned int i;
   for (i = 0; i < 10; i++)
@@ -160,6 +162,8 @@ void player::equip(int carry_index, int ring_hand)
   
   carry[carry_index] = unequip(equip_index);
   speed += new_item->get_speed();
+  dodge += new_item->get_dodge();
+  hit_boost += new_item->get_hitpoints();
   double percent_hp = hitpoints/hitpoints_max;
   hitpoints_max += new_item->get_defense();
   hitpoints = hitpoints_max * percent_hp;
@@ -176,6 +180,8 @@ item* player::unequip(int equipment_index)
   equipment[equipment_index] = NULL;
 
   speed -= holder->get_speed();
+  dodge -= holder->get_dodge();
+  hit_boost -= holder->get_hitpoints();
   double percent_hp = hitpoints/hitpoints_max;
   hitpoints_max -= holder->get_defense();
   hitpoints = hitpoints_max * percent_hp;
@@ -262,8 +268,28 @@ void move_character(dungeon_t* dungeon, character* character, point_t nloc, char
   if (other != NULL)
   {
     if (other->type == PC)
-    {      
-      other->take_damage(character->get_damage());
+    {
+      int evade = other->dodge - character->hit_boost;
+      if (evade <= 0)
+      {
+	int damage = character->get_damage();
+	other->take_damage(damage);
+	mvprintw(22, 0, "%c hit PC with %d damage", character->symbol, damage);
+      }
+      else
+      {
+        float r = (float)(rand()) / (float)(RAND_MAX);
+	if (r < (1/((float)evade)))
+	{
+	  int damage = character->get_damage();
+	  other->take_damage(damage);
+	  mvprintw(22, 0, "%c hit PC with %d damage          ", character->symbol, damage);
+	}
+	else
+	{
+	  mvprintw(22, 0, "PC dodged                         ");
+	}
+      }
       if (!other->alive)
       {
 	dungeon->num_characters--;
@@ -580,10 +606,17 @@ void free_character(character* character)
 void add_monsters(dungeon_t* dungeon, std::vector<monster_data> types, int num_monsters)
 {
   dungeon->num_characters += num_monsters;
-  int i;
-  for (i = 0; i < num_monsters; i++)
+  int level = game_state.level;
+  int i = 0;
+  while (i < num_monsters)
   {
-    monster* monster = types[rand()%types.size()].create();
+    monster_data chosen_template = types[rand()%types.size()];
+    if (!chosen_template.check_level(level))
+    {
+      continue;
+    }
+    i++;
+    monster* monster = chosen_template.create();
     while (1)
     {
       int r = rand() % DUNGEON_ROWS;

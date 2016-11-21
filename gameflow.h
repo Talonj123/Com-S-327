@@ -8,6 +8,7 @@ typedef struct game_state
   char running : 1;
   char quitted : 1;
   char reload : 1;
+  int level;
 } game_state_t;
 
 extern game_state_t game_state;

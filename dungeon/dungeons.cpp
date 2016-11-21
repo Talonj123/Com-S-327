@@ -471,7 +471,7 @@ dungeon::dungeon(bool initMap)
     } while (up_stairs_loc.x == down_stairs_loc.x && down_stairs_loc.y == down_stairs_loc.y);
 
     terrain[up_stairs_loc.y][up_stairs_loc.x] = UP_STAIR;
-    terrain[down_stairs_loc.y][down_stairs_loc.y] = DOWN_STAIR;
+    terrain[down_stairs_loc.y][down_stairs_loc.x] = DOWN_STAIR;
     
     if (rooms_created >= NUM_ROOMS)
     {

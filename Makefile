@@ -33,7 +33,7 @@ dungeons.a: dungeon/dungeons.cpp dungeon/coordinates.cpp dungeon/dungeons_privat
 	cd dungeon; make  dungeons.a;
 	ld -r -o $@ dungeon/dungeons.a
 
-characters.o : characters.cpp characters.h
+characters.o : characters.cpp characters.h generation.hpp
 	g++ $(g++_flags) -c -o $@ characters.cpp
 
 pathfinding.o: pathfinding.cpp characters.h pqueue.hpp

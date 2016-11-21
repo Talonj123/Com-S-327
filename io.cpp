@@ -348,7 +348,7 @@ void inventory_interface(dungeon* dungeon, player* pc)
 	int length = desc.length();
 	if (length > i*80)
 	{
-	  string line = desc.substr(i*80, (i+1)*80 + 1).append(80 - (length % 80), ' ');
+	  string line = desc.substr(i*80, 80).append(80 - (length % 80), ' ');
 	  mvprintw(row + i, 0, "%s", line.c_str());
 	  continue;
 	}
@@ -617,6 +617,7 @@ GETCHAR_LBL:
     if (dungeon->terrain[loc.y][loc.x] == UP_STAIR)
     {
       game_state.reload = 1;
+      game_state.level--;
     }
     else
     {
@@ -628,6 +629,7 @@ GETCHAR_LBL:
     if (dungeon->terrain[loc.y][loc.x] == DOWN_STAIR)
     {
       game_state.reload = 1;
+      game_state.level++;
     }
     else
     {

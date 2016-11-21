@@ -1,5 +1,6 @@
 #include "items.hpp"
 #include "generation.hpp"
+#include "gameflow.h"
 
 item::item(const object_data* source_data) : source(*source_data)
 {
@@ -79,10 +80,16 @@ char item::get_symbol() const
 
 void add_items(dungeon* dungeon, const std::vector<object_data> templates, int num_items)
 {
-  int i;
-  for (i = 0; i < num_items; i++)
+  int i = 0;
+  while (i < num_items)
   {
-    item* itm = templates[rand() % templates.size()].create();
+    object_data chosen_template = templates[rand() % templates.size()];
+    if (!chosen_template.check_level(game_state.level))
+    {
+      continue;
+    }
+    i++;
+    item* itm = chosen_template.create();
     int r, c;
     do
     {

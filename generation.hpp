@@ -19,14 +19,16 @@ private:
   monster_attributes attributes;
   dice hitpoints;
   dice damage;
+  int difficulty;
 
 public:
   monster_data() : symbol('?') {};
-  static bool try_parse(std::istream&, monster_data*);
   monster* create() const;
+  bool check_level(int against) const;
+
+  static bool try_parse(std::istream&, monster_data*);
 
   void print(std::ostream&) const;
-
 };
 
 std::ostream& operator<<(std::ostream&, const monster_data&);
@@ -46,9 +48,11 @@ private:
   dice speed;
   dice special;
   dice value;
+  int difficulty;
 
 public:
   item* create() const;
+  bool check_level(int against) const;
   static bool try_parse(std::istream&, object_data*);
   static item_type get_type(std::string name);
   static std::string get_type_name(item_type type);
