@@ -1,3 +1,9 @@
+The dungeon is a 2D map with walls, halls and rooms. The characters can traverse through any open space (rooms and halls), some mosnters can tunnel.
+There are various items scattered throughout the dungeon (use --numitm to set how many), these items persist between levels.
+To advance or retreat a level, use the stairs (< and >) press the '<' or '>' key on the corresponding stair to travel, your items will stay with you.
+Some items have level-dependant properties, weapons can become more powerful as you descend, but armor has to be replaced to get the improvements.
+Use the number pad to travel. To edit enemies or items, see ~/.rlg327/monster_data.txt and ~/.rlg327/object_data.txt.
+
 The dungeon is generated as per Assignment 1.01.
 The --load and --save flags act as defined in Assignment 1.02.
 Pathfinding distance maps are generated as defined by Assignment 1.03.
